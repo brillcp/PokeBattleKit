@@ -14,51 +14,27 @@ actor PokeAPIClient {
         self.session = session
     }
 
-    func fetchMoveNames() async throws -> [String] {
+    func fetchMoves() async throws -> [APIMoveResponse] {
         let url = buildURL(path: "move", query: ["limit": "2000"])
-        let response: APIListResponse = try await fetch(url)
-        return response.results.map(\.name)
-    }
-
-    func fetchMove(named name: String) async throws -> APIMoveResponse {
-        try await fetch(buildURL(path: "move/\(name)"))
-    }
-
-    func fetchMoves(named names: [String], chunkSize: Int = 25) async throws -> [APIMoveResponse] {
-        var results: [APIMoveResponse] = []
-        results.reserveCapacity(names.count)
-
-        for chunkStart in stride(from: 0, to: names.count, by: chunkSize) {
-            let chunk = Array(names[chunkStart..<min(chunkStart + chunkSize, names.count)])
-            let chunkResults = try await withThrowingTaskGroup(of: APIMoveResponse.self) { group in
-                for name in chunk {
-                    group.addTask { try await self.fetchMove(named: name) }
-                }
-                var collected: [APIMoveResponse] = []
-                for try await result in group { collected.append(result) }
-                return collected
+        let list: APIListResponse = try await fetch(url)
+        return try await withThrowingTaskGroup(of: APIMoveResponse.self) { group in
+            for item in list.results {
+                group.addTask { try await self.fetch(self.buildURL(path: "move/\(item.name)")) }
             }
-            results.append(contentsOf: chunkResults)
+            var results: [APIMoveResponse] = []
+            for try await result in group { results.append(result) }
+            return results
         }
-        return results
-    }
-
-    func fetchTypeNames() async throws -> [String] {
-        let url = buildURL(path: "type", query: ["limit": "20"])
-        let response: APIListResponse = try await fetch(url)
-        let excluded: Set<String> = ["unknown", "shadow", "stellar"]
-        return response.results.map(\.name).filter { !excluded.contains($0) }
-    }
-
-    func fetchType(named name: String) async throws -> APITypeResponse {
-        try await fetch(buildURL(path: "type/\(name)"))
     }
 
     func fetchTypes() async throws -> [APITypeResponse] {
-        let names = try await fetchTypeNames()
+        let url = buildURL(path: "type", query: ["limit": "20"])
+        let list: APIListResponse = try await fetch(url)
+        let excluded: Set<String> = ["unknown", "shadow", "stellar"]
+        let names = list.results.map(\.name).filter { !excluded.contains($0) }
         return try await withThrowingTaskGroup(of: APITypeResponse.self) { group in
             for name in names {
-                group.addTask { try await self.fetchType(named: name) }
+                group.addTask { try await self.fetch(self.buildURL(path: "type/\(name)")) }
             }
             var results: [APITypeResponse] = []
             for try await result in group { results.append(result) }
