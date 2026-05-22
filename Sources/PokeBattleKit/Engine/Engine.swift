@@ -4,26 +4,26 @@ import Foundation
 ///
 /// Pure value type with no UI or actor dependencies. Mutate via
 /// `resolveRound` and read the updated `state` afterwards.
-public struct BattleEngine: Sendable {
+public struct Engine: Sendable {
     private let typeChart: TypeChart
 
-    public private(set) var state: BattleState
+    public private(set) var state: State
 
-    public init(state: BattleState, typeChart: TypeChart) {
+    public init(state: State, typeChart: TypeChart) {
         self.state = state
         self.typeChart = typeChart
     }
 
     public mutating func resolveRound(
-        playerMove: some BattleMoveData,
-        opponentMove: some BattleMoveData
-    ) -> [BattleEvent] {
+        playerMove: some MoveData,
+        opponentMove: some MoveData
+    ) -> [Event] {
         guard case .selectingMove = state.phase else { return [] }
-        var events: [BattleEvent] = []
+        var events: [Event] = []
         state.phase = .resolving
 
         let order = orderedSides(playerMove: playerMove, opponentMove: opponentMove)
-        var hitThisRound: Set<BattleSide> = []
+        var hitThisRound: Set<Side> = []
 
         for side in order {
             if combatant(side).isFainted || combatant(side.opposite).isFainted { continue }
@@ -56,12 +56,12 @@ public struct BattleEngine: Sendable {
 
 // MARK: - Private
 
-private extension BattleEngine {
+private extension Engine {
     mutating func performAction(
-        side: BattleSide,
-        move: some BattleMoveData,
-        events: inout [BattleEvent],
-        hitThisRound: inout Set<BattleSide>
+        side: Side,
+        move: some MoveData,
+        events: inout [Event],
+        hitThisRound: inout Set<Side>
     ) {
         events.append(.used(side, moveName: move.displayName))
         let baselineEventCount = events.count
@@ -155,10 +155,10 @@ private extension BattleEngine {
             events.append(.recoil(side, amount: recoilDmg))
         }
 
-        let ailment = BattleStatus(ailment: move.ailment)
+        let ailment = Status(ailment: move.ailment)
         if ailment != .none, move.ailmentChance > 0 || move.damageClassKind == .status {
             let chance = move.ailmentChance > 0 ? Double(move.ailmentChance) / 100.0 : 1.0
-            let target: BattleSide = side.opposite
+            let target: Side = side.opposite
             if combatant(target).status == .none, Double.random(in: 0..<1) < chance {
                 mutate(target) {
                     $0.status = ailment
@@ -179,7 +179,7 @@ private extension BattleEngine {
             for (index, statName) in move.statChangeNames.enumerated() where index < move.statChangeDeltas.count {
                 let delta = move.statChangeDeltas[index]
                 guard delta != 0 else { continue }
-                let target: BattleSide = allSelfTarget ? side : (delta < 0 ? side.opposite : side)
+                let target: Side = allSelfTarget ? side : (delta < 0 ? side.opposite : side)
                 mutate(target) { $0.applyStage(statName, delta: delta) }
                 events.append(.statChanged(target, stat: statName, delta: delta))
             }
@@ -190,7 +190,7 @@ private extension BattleEngine {
         }
     }
 
-    mutating func applyStatusTick(side: BattleSide, events: inout [BattleEvent]) {
+    mutating func applyStatusTick(side: Side, events: inout [Event]) {
         let c = combatant(side)
         guard !c.isFainted else { return }
         switch c.status {
@@ -207,7 +207,7 @@ private extension BattleEngine {
         }
     }
 
-    func orderedSides(playerMove: some BattleMoveData, opponentMove: some BattleMoveData) -> [BattleSide] {
+    func orderedSides(playerMove: some MoveData, opponentMove: some MoveData) -> [Side] {
         let playerKey = (playerMove.priority, state.player.effectiveSpeed)
         let opponentKey = (opponentMove.priority, state.opponent.effectiveSpeed)
         if playerKey.0 != opponentKey.0 {
@@ -219,11 +219,11 @@ private extension BattleEngine {
         return Bool.random() ? [.player, .opponent] : [.opponent, .player]
     }
 
-    func combatant(_ side: BattleSide) -> BattleCombatant {
+    func combatant(_ side: Side) -> Combatant {
         side == .player ? state.player : state.opponent
     }
 
-    mutating func checkFaint(after side: BattleSide, events: inout [BattleEvent]) -> [BattleEvent]? {
+    mutating func checkFaint(after side: Side, events: inout [Event]) -> [Event]? {
         if combatant(side).isFainted {
             events.append(.fainted(side))
             state.phase = .ended(winner: side.opposite)
@@ -239,7 +239,7 @@ private extension BattleEngine {
         return nil
     }
 
-    mutating func mutate(_ side: BattleSide, _ body: (inout BattleCombatant) -> Void) {
+    mutating func mutate(_ side: Side, _ body: (inout Combatant) -> Void) {
         if side == .player {
             body(&state.player)
         } else {

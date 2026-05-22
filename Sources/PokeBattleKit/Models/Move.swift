@@ -1,7 +1,7 @@
 import Foundation
 
 /// Concrete move type owned by PokeBattleKit.
-public struct Move: BattleMoveData, Codable, Hashable, Sendable {
+public struct Move: MoveData, Codable, Hashable, Sendable {
     public let name: String
     public let power: Int?
     public let accuracy: Int?

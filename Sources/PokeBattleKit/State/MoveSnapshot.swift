@@ -1,7 +1,7 @@
 import Foundation
 
 /// Immutable, Sendable value copy of a move for use inside the engine.
-public struct BattleMoveSnapshot: BattleMoveData, Hashable, Sendable {
+public struct MoveSnapshot: MoveData, Hashable, Sendable {
     public let name: String
     public let displayName: String
     public let power: Int?
@@ -55,8 +55,8 @@ public struct BattleMoveSnapshot: BattleMoveData, Hashable, Sendable {
         self.hasSelfDebuff = hasSelfDebuff
     }
 
-    /// Build a snapshot from any `BattleMoveData` conformer.
-    public init(from source: some BattleMoveData) {
+    /// Build a snapshot from any `MoveData` conformer.
+    public init(from source: some MoveData) {
         self.name = source.name
         self.displayName = source.displayName
         self.power = source.power

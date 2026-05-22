@@ -1,7 +1,7 @@
 import Foundation
 
 /// Status ailments a combatant can have.
-public enum BattleStatus: String, Sendable {
+public enum Status: String, Sendable {
     case none
     case paralysis
     case burn
@@ -31,7 +31,7 @@ public enum BattleStatus: String, Sendable {
 
 // MARK: - Internal
 
-extension BattleStatus {
+extension Status {
     init(ailment: String) {
         switch ailment {
         case "paralysis": self = .paralysis

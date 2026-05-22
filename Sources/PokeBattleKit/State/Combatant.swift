@@ -1,7 +1,7 @@
 import Foundation
 
 /// One side of a fight with identity, stats, and mutable in-battle state.
-public struct BattleCombatant: Sendable {
+public struct Combatant: Sendable {
     public let id: Int
     public let name: String
     public let frontSpriteURL: String
@@ -14,15 +14,15 @@ public struct BattleCombatant: Sendable {
     public let specialDefense: Int
     public let speed: Int
     public var currentHP: Int
-    public var status: BattleStatus
+    public var status: Status
     public var sleepTurns: Int = 0
     public var statStages: [String: Int]
-    public let moves: [BattleMoveSnapshot]
+    public let moves: [MoveSnapshot]
     var mustRecharge: Bool = false
 
     public init(
-        pokemon: some BattlePokemonData,
-        moves: [BattleMoveSnapshot],
+        pokemon: some PokemonData,
+        moves: [MoveSnapshot],
         hpBonus: Double = 1.0
     ) {
         let stats = pokemon.statLookup

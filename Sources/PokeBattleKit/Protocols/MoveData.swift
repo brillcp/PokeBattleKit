@@ -2,11 +2,11 @@ import Foundation
 
 /// Properties the battle engine reads from a move.
 ///
-/// Conformers include the concrete ``BattleMoveSnapshot`` shipped with
+/// Conformers include the concrete ``MoveSnapshot`` shipped with
 /// this package and any app-side persistence model (e.g. a SwiftData
 /// `@Model`) that satisfies the same shape. The protocol intentionally
 /// omits `Sendable` so non-Sendable model classes can conform.
-public protocol BattleMoveData {
+public protocol MoveData {
     var name: String { get }
     var displayName: String { get }
     var power: Int? { get }
@@ -25,7 +25,7 @@ public protocol BattleMoveData {
     var hasSelfDebuff: Bool { get }
 }
 
-public extension BattleMoveData {
+public extension MoveData {
     var damageClassKind: DamageClass {
         DamageClass(rawValue: damageClass) ?? .status
     }

@@ -4,7 +4,7 @@ import Foundation
 public enum DamageCalculator {
 
     /// Full damage computation with all modifiers. Used internally by
-    /// `BattleEngine` when resolving a hit.
+    /// `Engine` when resolving a hit.
     ///
     /// Formula per Bulbapedia:
     /// `((2*Level/5+2) * Power * A/D) / 50 + 2`
@@ -14,9 +14,9 @@ public enum DamageCalculator {
     /// prevent runaway one-shots.
     static func computeDamage(
         power: Int,
-        move: some BattleMoveData,
-        attacker: BattleCombatant,
-        defender: BattleCombatant,
+        move: some MoveData,
+        attacker: Combatant,
+        defender: Combatant,
         typeChart: some TypeEffectivenessProviding,
         superEffectiveCap: Double = 1.5
     ) -> (damage: Int, effectiveness: Double, crit: Bool) {
@@ -57,9 +57,9 @@ public enum DamageCalculator {
     /// pass arbitrary multipliers. Status-class moves and zero-power moves
     /// return 0.
     public static func estimateDamage(
-        move: some BattleMoveData,
-        attacker: BattleCombatant,
-        defender: BattleCombatant,
+        move: some MoveData,
+        attacker: Combatant,
+        defender: Combatant,
         typeChart: some TypeEffectivenessProviding,
         superEffectiveCap: Double = 1.5
     ) -> Int {
@@ -94,9 +94,9 @@ public enum DamageCalculator {
     /// Filters to moves whose estimated damage covers the defender's current
     /// HP and whose accuracy is at least 85%. Tiebreaks on accuracy-weighted
     /// expected damage. Returns `nil` when no move qualifies.
-    public static func guaranteedKO<Move: BattleMoveData>(
-        attacker: BattleCombatant,
-        defender: BattleCombatant,
+    public static func guaranteedKO<Move: MoveData>(
+        attacker: Combatant,
+        defender: Combatant,
         moves: [Move],
         typeChart: some TypeEffectivenessProviding,
         accuracyFloor: Double = 0.85
@@ -114,9 +114,9 @@ public enum DamageCalculator {
 
     /// Move that deals the most damage against `defender`. Returns `nil` if
     /// no damaging move is viable (zero power, status, or fully resisted).
-    public static func strongestMove<Move: BattleMoveData>(
-        attacker: BattleCombatant,
-        defender: BattleCombatant,
+    public static func strongestMove<Move: MoveData>(
+        attacker: Combatant,
+        defender: Combatant,
         moves: [Move],
         typeChart: some TypeEffectivenessProviding
     ) -> (move: Move, damage: Int)? {
