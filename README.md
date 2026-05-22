@@ -1,6 +1,7 @@
 # PokeBattleKit
 
 A standalone Swift package for simulating Pokemon battles, powered by [PokeAPI](https://pokeapi.co).
+Used in [PokedexUI](https://github.com/brillcp/pokedexui).
 
 ## Features
 
