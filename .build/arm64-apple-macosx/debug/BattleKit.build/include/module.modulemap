@@ -1,0 +1,3 @@
+module BattleKit {
+    header "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/include/BattleKit-Swift.h"
+}

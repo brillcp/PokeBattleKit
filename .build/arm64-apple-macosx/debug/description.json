@@ -1,0 +1,980 @@
+{
+  "builtTestProducts" : [
+    {
+      "binaryPath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.xctest/Contents/MacOS/BattleKitPackageTests",
+      "packagePath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit",
+      "productName" : "BattleKitPackageTests"
+    }
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.BattleKit-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/sources",
+      "importPath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Engine/BattleEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Engine/DamageCalculator.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Engine/StatStage.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/MoveClassification/DamageClass.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/MoveClassification/MoveClassification.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Protocols/BattleMoveData.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Protocols/BattlePokemonData.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Protocols/TypeEffectivenessProviding.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleCombatant.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleEvent.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleMoveSnapshot.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattlePhase.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleSide.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleState.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleStatus.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/TypeChart/TypeChart.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "BattleKit",
+      "moduleOutputPath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/Modules/BattleKit.swiftmodule",
+      "objects" : [
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleEngine.swift.o",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/DamageCalculator.swift.o",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/StatStage.swift.o",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/DamageClass.swift.o",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/MoveClassification.swift.o",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleMoveData.swift.o",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattlePokemonData.swift.o",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/TypeEffectivenessProviding.swift.o",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleCombatant.swift.o",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleEvent.swift.o",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleMoveSnapshot.swift.o",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattlePhase.swift.o",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleSide.swift.o",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleState.swift.o",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleStatus.swift.o",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/TypeChart.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx10.13",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/include/BattleKit-Swift.h",
+        "-swift-version",
+        "6",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "battlekit"
+      ],
+      "outputFileMapPath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/DamageCalculator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/StatStage.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/DamageClass.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/MoveClassification.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleMoveData.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattlePokemonData.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/TypeEffectivenessProviding.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleCombatant.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleEvent.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleMoveSnapshot.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattlePhase.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleSide.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleState.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleStatus.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/TypeChart.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/Modules/BattleKit.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Engine/BattleEngine.swift",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Engine/DamageCalculator.swift",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Engine/StatStage.swift",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/MoveClassification/DamageClass.swift",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/MoveClassification/MoveClassification.swift",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Protocols/BattleMoveData.swift",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Protocols/BattlePokemonData.swift",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Protocols/TypeEffectivenessProviding.swift",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleCombatant.swift",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleEvent.swift",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleMoveSnapshot.swift",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattlePhase.swift",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleSide.swift",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleState.swift",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleStatus.swift",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/TypeChart/TypeChart.swift"
+      ],
+      "tempsPath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.BattleKitPackageTests-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.build/sources",
+      "importPath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.derived/runner.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/Modules/BattleKitTests.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "BattleKitPackageTests",
+      "moduleOutputPath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/Modules/BattleKitPackageTests.swiftmodule",
+      "objects" : [
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.build/runner.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx10.13",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.build/include/BattleKitPackageTests-Swift.h",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "battlekit"
+      ],
+      "outputFileMapPath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/Modules/BattleKitPackageTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.derived/runner.swift"
+      ],
+      "tempsPath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.BattleKitTests-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitTests.build/sources",
+      "importPath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Tests/BattleKitTests/BattleEngineTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Tests/BattleKitTests/DamageCalculatorTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Tests/BattleKitTests/StatStageTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Tests/BattleKitTests/TypeChartTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/Modules/BattleKit.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "BattleKitTests",
+      "moduleOutputPath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/Modules/BattleKitTests.swiftmodule",
+      "objects" : [
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitTests.build/BattleEngineTests.swift.o",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitTests.build/DamageCalculatorTests.swift.o",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitTests.build/StatStageTests.swift.o",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitTests.build/TypeChartTests.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-swift-version",
+        "6",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "battlekit"
+      ],
+      "outputFileMapPath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitTests.build/BattleEngineTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitTests.build/DamageCalculatorTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitTests.build/StatStageTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitTests.build/TypeChartTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/Modules/BattleKitTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Tests/BattleKitTests/BattleEngineTests.swift",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Tests/BattleKitTests/DamageCalculatorTests.swift",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Tests/BattleKitTests/StatStageTests.swift",
+        "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Tests/BattleKitTests/TypeChartTests.swift"
+      ],
+      "tempsPath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitTests.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "BattleKit" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "BattleKit",
+      "-package-name",
+      "battlekit",
+      "-c",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Engine/BattleEngine.swift",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Engine/DamageCalculator.swift",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Engine/StatStage.swift",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/MoveClassification/DamageClass.swift",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/MoveClassification/MoveClassification.swift",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Protocols/BattleMoveData.swift",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Protocols/BattlePokemonData.swift",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Protocols/TypeEffectivenessProviding.swift",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleCombatant.swift",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleEvent.swift",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleMoveSnapshot.swift",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattlePhase.swift",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleSide.swift",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleState.swift",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleStatus.swift",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/TypeChart/TypeChart.swift",
+      "-I",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx10.13",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/include/BattleKit-Swift.h",
+      "-swift-version",
+      "6",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "battlekit",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "BattleKitPackageTests" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "BattleKitPackageTests",
+      "-package-name",
+      "battlekit",
+      "-c",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.derived/runner.swift",
+      "-I",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx10.13",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.build/include/BattleKitPackageTests-Swift.h",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "battlekit",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "BattleKitTests" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "BattleKitTests",
+      "-package-name",
+      "battlekit",
+      "-c",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Tests/BattleKitTests/BattleEngineTests.swift",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Tests/BattleKitTests/DamageCalculatorTests.swift",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Tests/BattleKitTests/StatStageTests.swift",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Tests/BattleKitTests/TypeChartTests.swift",
+      "-I",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-swift-version",
+      "6",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "battlekit",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "BattleKit" : [
+
+    ],
+    "BattleKitPackageTests" : [
+      "BattleKitTests",
+      "BattleKit"
+    ],
+    "BattleKitTests" : [
+      "BattleKit"
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+    "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.derived/runner.swift" : {
+      "inputs" : [
+
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.derived/runner.swift"
+        }
+      ]
+    }
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Engine/BattleEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Engine/DamageCalculator.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Engine/StatStage.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/MoveClassification/DamageClass.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/MoveClassification/MoveClassification.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Protocols/BattleMoveData.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Protocols/BattlePokemonData.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/Protocols/TypeEffectivenessProviding.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleCombatant.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleEvent.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleMoveSnapshot.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattlePhase.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleSide.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleState.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/State/BattleStatus.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Sources/BattleKit/TypeChart/TypeChart.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/sources"
+    },
+    "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.derived/runner.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.build/sources"
+    },
+    "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleCombatant.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleEvent.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleMoveData.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleMoveSnapshot.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattlePhase.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattlePokemonData.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleSide.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleState.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/BattleStatus.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/DamageCalculator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/DamageClass.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/MoveClassification.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/StatStage.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/TypeChart.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKit.build/TypeEffectivenessProviding.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitTests.build/BattleEngineTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitTests.build/DamageCalculatorTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitTests.build/StatStageTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitTests.build/TypeChartTests.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.product/Objects.LinkFileList"
+    },
+    "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Tests/BattleKitTests/BattleEngineTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Tests/BattleKitTests/DamageCalculatorTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Tests/BattleKitTests/StatStageTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/Tests/BattleKitTests/TypeChartTests.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitTests.build/sources"
+    },
+    "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+    }
+  }
+}

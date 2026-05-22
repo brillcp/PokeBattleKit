@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.build/master.swiftdeps"
+  },
+  "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.derived/runner.swift": {
+    "dependencies": "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.build/runner.d",
+    "object": "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.build/runner.swift.o",
+    "swiftmodule": "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.build/runner~partial.swiftmodule",
+    "swift-dependencies": "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.build/runner.swiftdeps",
+    "diagnostics": "/Users/vg/Documents/Dev/PokedexUI/BattleKit/.build/arm64-apple-macosx/debug/BattleKitPackageTests.build/runner.dia"
+  }
+}
