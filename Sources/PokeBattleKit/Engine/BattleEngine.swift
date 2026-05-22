@@ -55,6 +55,7 @@ public struct BattleEngine: Sendable {
 }
 
 // MARK: - Private
+
 private extension BattleEngine {
     mutating func performAction(
         side: BattleSide,

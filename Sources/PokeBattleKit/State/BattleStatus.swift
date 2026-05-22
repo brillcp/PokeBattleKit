@@ -27,7 +27,11 @@ public enum BattleStatus: String, Sendable {
         case .sleep: return "asleep"
         }
     }
+}
 
+// MARK: - Internal
+
+extension BattleStatus {
     init(ailment: String) {
         switch ailment {
         case "paralysis": self = .paralysis
