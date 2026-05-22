@@ -7,9 +7,9 @@ import Foundation
 public struct Engine: Sendable {
     private let typeChart: TypeChart
 
-    public private(set) var state: State
+    public private(set) var state: BattleState
 
-    public init(state: State, typeChart: TypeChart) {
+    public init(state: BattleState, typeChart: TypeChart) {
         self.state = state
         self.typeChart = typeChart
     }
