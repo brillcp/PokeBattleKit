@@ -38,6 +38,10 @@ public extension MoveData {
         return "OTHER"
     }
 
+    var isDamage: Bool  { (power ?? 0) > 0 }
+    var isBoost: Bool   { (power ?? 0) == 0 && statChangeDeltas.contains { $0 > 0 } }
+    var isDisrupt: Bool { (power ?? 0) == 0 && (ailment != "none" || statChangeDeltas.contains { $0 < 0 }) }
+
     var isBattleReady: Bool {
         if MoveClassification.chargingMoves.contains(name) { return false }
         if MoveClassification.selfKOMoves.contains(name) { return false }
