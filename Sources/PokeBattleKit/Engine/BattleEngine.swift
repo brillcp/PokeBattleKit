@@ -4,7 +4,7 @@ import Foundation
 ///
 /// Pure value type with no UI or actor dependencies. Mutate via
 /// `resolveRound` and read the updated `state` afterwards.
-public struct Engine: Sendable {
+public struct BattleEngine: Sendable {
     private let typeChart: TypeChart
 
     public private(set) var state: BattleState
@@ -56,7 +56,7 @@ public struct Engine: Sendable {
 
 // MARK: - Private
 
-private extension Engine {
+private extension BattleEngine {
     mutating func performAction(
         side: Side,
         move: some MoveData,
