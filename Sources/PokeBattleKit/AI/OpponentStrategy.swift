@@ -1,6 +1,7 @@
 /// Sendable DTO carrying the fields the AI needs to evaluate a
-/// potential opponent. Pure data; heuristics live in ``OpponentStrategy``.
-public struct OpponentCandidate: Sendable {
+/// potential battle candidate. Pure data; heuristics live in
+/// ``OpponentStrategy``.
+public struct Candidate: Sendable {
     public let id: Int
     public let name: String
     public let typeNames: [String]
@@ -34,12 +35,12 @@ public enum OpponentStrategy {
     /// score-rank survivors, then shuffle a top slice. Falls back to the
     /// unfiltered pool if filtering leaves too few candidates.
     public static func balancedPool(
-        from snapshots: [OpponentCandidate],
+        from snapshots: [Candidate],
         playerBST: Int,
         playerTypes: [String],
         chart: (some TypeEffectivenessProviding)?,
         limit: Int = 50
-    ) -> [OpponentCandidate] {
+    ) -> [Candidate] {
         let filtered = snapshots.filter { candidate in
             let delta = candidate.baseStatTotal - playerBST
             guard delta >= -120 && delta <= 70 else { return false }
@@ -61,8 +62,8 @@ public enum OpponentStrategy {
 
     /// Best opponent id by full matchup scoring; nil if pool is empty.
     public static func heuristicPick(
-        player: OpponentCandidate,
-        candidates: [OpponentCandidate],
+        player: Candidate,
+        candidates: [Candidate],
         typeChart: (some TypeEffectivenessProviding)?
     ) -> Int? {
         let tiered = candidates.filter { candidate in
@@ -83,8 +84,8 @@ private extension OpponentStrategy {
     /// Composite matchup score: BST closeness, type pressure, legendary
     /// and mega caveats. Used by `heuristicPick` for final ranking.
     static func matchupScore(
-        player: OpponentCandidate,
-        candidate: OpponentCandidate,
+        player: Candidate,
+        candidate: Candidate,
         typeChart: (some TypeEffectivenessProviding)?
     ) -> Double {
         let delta = candidate.baseStatTotal - player.baseStatTotal
@@ -125,7 +126,7 @@ private extension OpponentStrategy {
     }
 
     static func poolScore(
-        _ candidate: OpponentCandidate,
+        _ candidate: Candidate,
         playerBST: Int,
         playerTypes: [String],
         chart: (some TypeEffectivenessProviding)?
