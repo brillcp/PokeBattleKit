@@ -83,12 +83,6 @@ public enum DamageCalculator {
         return Int(base * stab * typeMult)
     }
 
-    /// How many hits at `damage` per hit to KO a target with `hp`.
-    public static func turnsToKO(_ damage: Int, hp: Int) -> Int {
-        guard damage > 0 else { return 99 }
-        return Int(ceil(Double(hp) / Double(damage)))
-    }
-
     /// Move that lands a KO this turn, accounting for accuracy.
     ///
     /// Filters to moves whose estimated damage covers the defender's current
