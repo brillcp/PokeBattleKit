@@ -63,8 +63,7 @@ public enum LoadoutStrategy {
         opponent: Combatant,
         typeChart: some TypeEffectivenessProviding
     ) -> [M] {
-        let composed = enforceComposition(picks, pool: pool, fighter: fighter, opponent: opponent, typeChart: typeChart)
-        return handicap(composed, pool: pool, fighter: fighter, opponent: opponent, typeChart: typeChart)
+        handicap(picks, pool: pool, fighter: fighter, opponent: opponent, typeChart: typeChart)
     }
 }
 
@@ -95,57 +94,6 @@ private extension LoadoutStrategy {
             }
         }
         return out
-    }
-
-    static func enforceComposition<M: MoveData>(
-        _ loadout: [M],
-        pool: [M],
-        fighter: Combatant,
-        opponent: Combatant,
-        typeChart: some TypeEffectivenessProviding
-    ) -> [M] {
-        let damageMoves = loadout.enumerated().filter { $0.element.isDamage }
-        guard damageMoves.count > 2 else { return loadout }
-
-        var result = loadout
-        var used = Set(result.map(\.name))
-        let hasBoost = result.contains(where: \.isBoost)
-        let hasDisrupt = result.contains(where: \.isDisrupt)
-
-        let weakestFirst = damageMoves.sorted { lhs, rhs in
-            DamageCalculator.estimateDamage(move: lhs.element, attacker: fighter, defender: opponent, typeChart: typeChart)
-            < DamageCalculator.estimateDamage(move: rhs.element, attacker: fighter, defender: opponent, typeChart: typeChart)
-        }
-
-        var replaced = 0
-        for (offset, _) in weakestFirst where replaced < damageMoves.count - 2 {
-            let needCategory: String? = !hasBoost && replaced == 0 ? "BOOST" :
-                !hasDisrupt ? "DISRUPT" :
-                ["BOOST", "DISRUPT"].randomElement()
-            guard let category = needCategory,
-                  let swap = bestFromPool(category: category, pool: pool, exclude: used,
-                                          fighter: fighter, opponent: opponent, typeChart: typeChart)
-            else { continue }
-            result[offset] = swap
-            used.insert(swap.name)
-            replaced += 1
-        }
-        return result
-    }
-
-    static func bestFromPool<M: MoveData>(
-        category: String,
-        pool: [M],
-        exclude: Set<String>,
-        fighter: Combatant,
-        opponent: Combatant,
-        typeChart: some TypeEffectivenessProviding
-    ) -> M? {
-        pool.filter { !exclude.contains($0.name) && $0.loadoutCategory == category }
-            .max {
-                MoveScoring.score(move: $0, fighter: fighter, opponent: opponent, typeChart: typeChart)
-                < MoveScoring.score(move: $1, fighter: fighter, opponent: opponent, typeChart: typeChart)
-            }
     }
 
     static func handicap<M: MoveData>(
