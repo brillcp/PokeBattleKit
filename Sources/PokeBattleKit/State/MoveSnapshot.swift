@@ -1,7 +1,7 @@
 import Foundation
 
 /// Immutable, Sendable value copy of a move for use inside the engine.
-public struct MoveSnapshot: MoveData, Hashable, Sendable {
+public struct MoveSnapshot: MoveData, Codable, Hashable, Sendable {
     public let name: String
     public let displayName: String
     public let power: Int?

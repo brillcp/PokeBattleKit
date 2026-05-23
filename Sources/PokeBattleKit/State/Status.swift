@@ -1,7 +1,7 @@
 import Foundation
 
 /// Status ailments a combatant can have.
-public enum Status: String, Sendable {
+public enum Status: String, Sendable, Codable {
     case none
     case paralysis
     case burn

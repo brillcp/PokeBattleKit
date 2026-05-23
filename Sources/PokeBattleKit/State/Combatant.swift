@@ -1,7 +1,7 @@
 import Foundation
 
 /// One side of a fight with identity, stats, and mutable in-battle state.
-public struct Combatant: Sendable {
+public struct Combatant: Sendable, Codable {
     public let id: Int
     public let name: String
     public let frontSpriteURL: String

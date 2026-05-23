@@ -1,7 +1,7 @@
 import Foundation
 
 /// Which side of the battle an event applies to.
-public enum Side: Hashable, Sendable {
+public enum Side: String, Hashable, Sendable, Codable {
     case player
     case opponent
 
