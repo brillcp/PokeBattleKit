@@ -60,7 +60,6 @@ public enum MoveScoring {
         let hpFraction = Double(attacker.currentHP) / Double(max(1, attacker.maxHP))
         if hpFraction <= 0.30 {
             if move.healing > 0 || move.name == "rest" { score += Weights.lowHPHealBonus }
-            else if (move.power ?? 0) > 0, move.priority <= 0 { score -= Weights.usedRecently }
             if move.priority > 0, (move.power ?? 0) > 0 { score += Weights.lowHPPriorityBonus }
         }
 
@@ -112,7 +111,7 @@ public enum MoveScoring {
         public static let wastedBoostPenalty: Double   = 18
         public static let redundantStatusPenalty: Double = 25
         public static let lowHPHealBonus: Double      = 35
-        public static let lowHPPriorityBonus: Double  = 6
+        public static let lowHPPriorityBonus: Double  = 20
     }
 }
 
