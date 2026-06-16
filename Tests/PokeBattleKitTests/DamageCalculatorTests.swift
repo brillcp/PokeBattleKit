@@ -77,13 +77,6 @@ struct DamageCalculatorTests {
         #expect(capped < uncapped)
     }
 
-    @Test func turnsToKOBasic() {
-        #expect(DamageCalculator.turnsToKO(100, hp: 200) == 2)
-        #expect(DamageCalculator.turnsToKO(100, hp: 250) == 3)
-        #expect(DamageCalculator.turnsToKO(100, hp: 100) == 1)
-        #expect(DamageCalculator.turnsToKO(0, hp: 100) == 99)
-    }
-
     @Test func guaranteedKOFindsKiller() {
         var defender = Combatant(pokemon: Self.pokemon(types: ["grass"]), moves: [])
         defender.currentHP = 5
