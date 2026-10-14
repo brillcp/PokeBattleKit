@@ -7,7 +7,7 @@ Used in [PokedexUI](https://github.com/brillcp/pokedexui). Written by [Viktor Gi
 
 - **Type chart**: full Gen I-VIII effectiveness matchups via `TypeChart` (conforms to `TypeEffectivenessProviding`)
 - **Damage calculator**: Gen-V formula with STAB, type effectiveness, crit, burn penalty, stat stages (`DamageCalculator`)
-- **Battle engine**: turn-based 1v1 combat with speed priority, stat stages, status effects (paralysis, burn, poison, sleep), recharge, and faint detection (`BattleEngine`)
+- **Battle engine**: turn-based 1v1 combat with move priority and stage-adjusted speed, stat stages, status effects (paralysis, burn, poison, sleep for 1-3 turns) with type immunities (Electric can't be paralyzed, Fire can't be burned, Poison/Steel can't be poisoned, Thunder Wave fails on Ground), recharge, and faint detection (`BattleEngine`)
 - **Move classification**: recharge moves, self-debuff, charging, self-KO, and ailment sets (`MoveClassification`)
 - **AI strategies**: deterministic scoring, heuristic picking, and post-pick corrections for three decisions:
   - `MoveScoring` + `MoveStrategy`: in-battle move selection with tunable weights and escalating recency penalties
