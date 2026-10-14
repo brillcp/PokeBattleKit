@@ -47,4 +47,11 @@ public enum MoveClassification {
     public static let requiresPoisonedTarget: Set<String> = [
         "venom-drench"
     ]
+
+    /// Status moves that fail against a type immune to the move's own type
+    /// (Thunder Wave vs Ground). Most status moves ignore type matchups
+    /// (Hypnosis still works on Dark types), so this is an explicit list.
+    public static let respectsTypeImmunity: Set<String> = [
+        "thunder-wave"
+    ]
 }

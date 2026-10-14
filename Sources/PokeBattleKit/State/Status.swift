@@ -26,6 +26,23 @@ public enum Status: String, Sendable, Codable {
         }
     }
 
+    /// Types that can never have this status (Gen VI+ rules): Electric
+    /// can't be paralyzed, Fire can't be burned, and Poison and Steel can't
+    /// be poisoned. Sleep has no type immunity.
+    public var immuneTypes: Set<String> {
+        switch self {
+        case .paralysis: return ["electric"]
+        case .burn: return ["fire"]
+        case .poison: return ["poison", "steel"]
+        case .sleep, .none: return []
+        }
+    }
+
+    /// Whether a Pokémon with `typeNames` can never have this status.
+    public func isImmune(typeNames: [String]) -> Bool {
+        !immuneTypes.isDisjoint(with: typeNames)
+    }
+
     /// Adjective for battle text, e.g. "Pikachu is paralyzed".
     public var label: String {
         switch self {

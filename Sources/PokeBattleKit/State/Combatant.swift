@@ -20,8 +20,9 @@ public struct Combatant: Sendable, Codable {
     public let speed: Int
     public var currentHP: Int
     public var status: Status
-    /// Sleep counter, decremented each time the combatant tries to act while
-    /// asleep; it wakes (and acts) when this reaches 0.
+    /// Turns left asleep. Each attempt to act while it's above 0 is skipped
+    /// and counts it down; the attempt after it reaches 0 wakes up and acts.
+    /// So a counter of N costs exactly N turns.
     public var sleepTurns: Int = 0
     /// Stat stages in -6...+6, keyed by PokeAPI stat name ("attack",
     /// "special-defense", ...). Missing keys mean stage 0.
@@ -66,10 +67,11 @@ public struct Combatant: Sendable, Codable {
     public var isFainted: Bool { currentHP <= 0 }
     public var isBoosted: Bool { statStages.values.contains { $0 > 0 } }
 
-    /// Speed used for turn order: halved while paralyzed. Speed stat stages
-    /// are not applied.
+    /// Speed used for turn order: the speed stat scaled by its stat stage
+    /// (Agility's +2 doubles it), then halved while paralyzed.
     public var effectiveSpeed: Int {
-        status == .paralysis ? speed / 2 : speed
+        let staged = Int(Double(speed) * statStageMultiplier(stage(for: "speed")))
+        return status == .paralysis ? staged / 2 : staged
     }
 
     public func stage(for stat: String) -> Int { statStages[stat] ?? 0 }

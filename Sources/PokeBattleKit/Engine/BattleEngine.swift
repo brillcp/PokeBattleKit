@@ -44,8 +44,8 @@ public struct BattleEngine: Sendable {
     /// A round runs in two parts:
     /// 1. **Actions.** Both sides act in turn order: higher move `priority`
     ///    goes first; on equal priority the higher
-    ///    ``Combatant/effectiveSpeed`` goes first (paralysis halves speed;
-    ///    speed stat stages are not applied); an exact tie is a coin flip.
+    ///    ``Combatant/effectiveSpeed`` goes first (speed stat stages apply,
+    ///    then paralysis halves it); an exact tie is a coin flip.
     ///    The battle ends immediately when anyone faints after an action, so
     ///    a KO'd defender never gets its turn.
     /// 2. **End of round.** Burn (1/16 max HP) and poison (1/8 max HP) tick
@@ -140,12 +140,12 @@ private extension BattleEngine {
             return
         }
 
-        // The counter is decremented before it's checked, so a counter of N
-        // costs N - 1 turns: a 1-turn sleep wakes up and acts right away, and
-        // Rest's counter of 2 skips exactly one turn after the Rest itself.
+        // A counter of N skips exactly N turns: while it's above 0 the turn is
+        // lost and it counts down; the next attempt wakes up and acts. Sleep
+        // moves roll 1-3 turns, and Rest's counter of 2 skips two turns.
         if combatant(side).status == .sleep {
-            mutate(side) { $0.sleepTurns -= 1 }
             if combatant(side).sleepTurns > 0 {
+                mutate(side) { $0.sleepTurns -= 1 }
                 events.append(.fastAsleep(side))
                 return
             }
@@ -201,6 +201,9 @@ private extension BattleEngine {
         }
 
         var damageDealt = 0
+        // Set when the target is immune to the move's type, so a damaging
+        // move that "had no effect" can't still inflict its ailment.
+        var moveHadNoEffect = false
         if let power = move.power, power > 0, move.damageClassKind != .status {
             let (damage, effectiveness, crit) = DamageCalculator.computeDamage(
                 power: power,
@@ -210,6 +213,7 @@ private extension BattleEngine {
                 typeChart: typeChart
             )
             damageDealt = damage
+            moveHadNoEffect = effectiveness == 0
             mutate(side.opposite) { $0.currentHP = max(0, $0.currentHP - damage) }
             events.append(.damaged(side.opposite, amount: damage, effectiveness: effectiveness, crit: crit))
             if damage > 0 { hitThisRound.insert(side.opposite) }
@@ -235,15 +239,24 @@ private extension BattleEngine {
         }
 
         // Ailments always target the opponent and only land on a healthy
-        // target (no stacking or overwriting; type immunities are not
-        // modeled). PokeAPI reports an ailment chance of 0 for most status
-        // moves (Thunder Wave), which here means "always"; a damaging move
-        // with a chance of 0 never inflicts its ailment.
+        // target (no stacking or overwriting). They're blocked when:
+        // - a damaging move had no effect (Body Slam into a Ghost type),
+        // - a status move that respects type matchups hits an immune type
+        //   (Thunder Wave into a Ground type), or
+        // - the target's type can't have that status (Fire can't be burned).
+        // PokeAPI reports an ailment chance of 0 for most status moves
+        // (Thunder Wave), which here means "always"; a damaging move with a
+        // chance of 0 never inflicts its ailment.
         let ailment = Status(ailment: move.ailment)
         if ailment != .none, move.ailmentChance > 0 || move.damageClassKind == .status {
             let chance = move.ailmentChance > 0 ? Double(move.ailmentChance) / 100.0 : 1.0
             let target: Side = side.opposite
-            if combatant(target).status == .none, Double.random(in: 0..<1) < chance {
+            let targetTypes = combatant(target).typeNames
+            let blockedByMoveType = moveHadNoEffect
+                || (MoveClassification.respectsTypeImmunity.contains(move.name)
+                    && typeChart.multiplier(attacking: move.typeName, defenders: targetTypes) == 0)
+            if !blockedByMoveType, !ailment.isImmune(typeNames: targetTypes),
+               combatant(target).status == .none, Double.random(in: 0..<1) < chance {
                 mutate(target) {
                     $0.status = ailment
                     if ailment == .sleep { $0.sleepTurns = Int.random(in: 1...3) }

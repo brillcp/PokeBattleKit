@@ -12,9 +12,10 @@ private let base = 2.0
 /// zero. Stage 0 = 1.0x. Inputs outside -6...+6 are clamped.
 ///
 /// Used for attack, defense, special attack and special defense in
-/// ``DamageCalculator``. Accuracy, evasion and speed stages are tracked on
-/// ``Combatant`` but never converted to a multiplier: they don't change hit
-/// chance or turn order (only the AI reads them, to avoid over-boosting).
+/// ``DamageCalculator``, and for speed in ``Combatant/effectiveSpeed`` (turn
+/// order). Accuracy and evasion stages are tracked on ``Combatant`` but never
+/// converted to a multiplier, so they don't change hit chance (only the AI
+/// reads them, to avoid over-boosting).
 func statStageMultiplier(_ stage: Int) -> Double {
     let s = max(-maxStage, min(maxStage, stage))
     return s >= 0 ? (base + Double(s)) / base : base / (base - Double(s))

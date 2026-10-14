@@ -31,9 +31,10 @@ public enum MoveScoring {
     /// summed (see the `Weights` groups below).
     ///
     /// Moves that can't work at all (a damaging move the target is immune
-    /// to, or Venom Drench against an unpoisoned target) get
-    /// ``Weights/disallowed`` so they sort to the bottom. Type immunity is
-    /// not checked for non-damaging moves.
+    /// to, Thunder Wave into a Ground type, or Venom Drench against an
+    /// unpoisoned target) get ``Weights/disallowed`` so they sort to the
+    /// bottom. Other status moves ignore type matchups, as in the engine;
+    /// a status the target's type can't have just scores 0.
     public static func score(
         move: some MoveData,
         fighter: Combatant,
@@ -42,6 +43,10 @@ public enum MoveScoring {
     ) -> Double {
         if MoveClassification.requiresPoisonedTarget.contains(move.name),
            opponent.status != .poison {
+            return Weights.disallowed
+        }
+        if MoveClassification.respectsTypeImmunity.contains(move.name),
+           typeChart.multiplier(attacking: move.typeName, defenders: opponent.typeNames) == 0 {
             return Weights.disallowed
         }
         if move.isDamage, move.damageClassKind != .status {
@@ -245,6 +250,9 @@ private extension MoveScoring {
         fighter: Combatant,
         opponent: Combatant
     ) -> Double {
+        // Worthless against a type that can't have this status (Will-O-Wisp
+        // into a Fire type), matching the engine's immunity rules.
+        if Status(ailment: ailment).isImmune(typeNames: opponent.typeNames) { return 0 }
         let factor = Double(max(chance, Weights.statusMinChance)) / 100
         switch ailment {
         case "paralysis":
