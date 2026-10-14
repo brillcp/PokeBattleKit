@@ -1,9 +1,26 @@
 /// Deterministic AI for in-battle move selection. Owns the heuristic
-/// fallback used when the LLM is unavailable and the post-pick correction
-/// pipeline applied to every chosen move regardless of source.
+/// fallback used when the host app's LLM picker is unavailable and the
+/// post-pick correction pipeline applied to every chosen move regardless of
+/// source.
+///
+/// The intended flow each turn:
+///
+/// ```swift
+/// guard let pick = llmPick ?? MoveStrategy.heuristicPick(
+///     attacker: ai, defender: player, moves: ai.moves,
+///     typeChart: chart, recentMoves: aiHistory) else { return }
+/// let final = MoveStrategy.adjust(
+///     pick: pick, attacker: ai, defender: player,
+///     moves: ai.moves, typeChart: chart, fallback: safeMove)
+/// ```
+///
+/// Given the same inputs, both functions always return the same move.
 public enum MoveStrategy {
 
-    /// Highest-scoring move accounting for damage, recency, and low-HP bias.
+    /// Highest-scoring move by
+    /// ``MoveScoring/inBattleScore(move:attacker:defender:typeChart:recentMoves:)``,
+    /// accounting for damage, recency, and low-HP bias. Ties go to the
+    /// earliest move in `moves`. Returns `nil` only if `moves` is empty.
     public static func heuristicPick<M: MoveData>(
         attacker: Combatant,
         defender: Combatant,
@@ -20,6 +37,27 @@ public enum MoveStrategy {
     /// Post-pick correction pipeline. Order: immune repair -> wasted boost
     /// / re-status override -> guaranteed-KO upgrade -> redundant-status
     /// downgrade. Each step is a no-op when its precondition isn't met.
+    ///
+    /// The pipeline exists so an LLM pick (or a heuristic pick in an edge
+    /// case) can't make an obviously bad play:
+    /// 1. **Immune repair:** if the target is immune to the pick's type,
+    ///    use `fallback`. This checks the type regardless of damage class,
+    ///    so a Normal-type status move is also replaced against a Ghost.
+    /// 2. **Wasted boost / re-status:** a non-damaging boost while any stat
+    ///    is already at +2, or any move carrying an ailment while the target
+    ///    already has a status, is swapped for the damaging move with the
+    ///    highest power x type multiplier.
+    /// 3. **KO upgrade:** if the pick wouldn't KO but another move would
+    ///    (per ``DamageCalculator/guaranteedKO(attacker:defender:moves:typeChart:accuracyFloor:)``),
+    ///    take the KO.
+    /// 4. **Redundant status:** a pure status-inflicting move against an
+    ///    already-statused target becomes the strongest damaging
+    ///    alternative. Usually step 2 has handled this already; this is a
+    ///    safety net for when it couldn't.
+    ///
+    /// - Parameter fallback: Move to use when the target is immune to the
+    ///   pick. It isn't checked itself, so pass one the target can be hit
+    ///   by.
     public static func adjust<M: MoveData>(
         pick: M,
         attacker: Combatant,
@@ -93,6 +131,8 @@ private extension MoveStrategy {
         )?.move ?? pick
     }
 
+    /// Cheap "hit them with something" choice: ranks damaging moves by base
+    /// power x type multiplier only, ignoring stats, stages and STAB.
     static func fallbackDamageMove<M: MoveData>(
         from moves: [M],
         defender: Combatant,

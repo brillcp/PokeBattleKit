@@ -1,12 +1,26 @@
-/// Deterministic AI for pre-battle loadout construction. Flow:
-/// 1. `shortlist` curates a diverse 50-move pool for the LLM.
+/// Heuristic AI for pre-battle loadout construction. Flow:
+/// 1. `shortlist` curates a diverse 50-move pool for the host app's LLM.
 /// 2. `heuristicPick` returns the 4-move fallback when the LLM is
 ///    unavailable or returns junk.
 /// 3. `fill` pads partial LLM picks up to 4.
-/// 4. `adjust` enforces 2 DMG + 1 BOOST + 1 DISRUPT composition and
-///    downgrades one damage move for fairness.
+/// 4. `adjust` downgrades one damage move for fairness.
+///
+/// All candidates are ranked with
+/// ``MoveScoring/score(move:fighter:opponent:typeChart:)`` against the
+/// specific opponent, so loadouts are tailored to the matchup. Pass moves
+/// already filtered with ``MoveData/isBattleReady``. Everything here is
+/// deterministic except `adjust`, which picks its replacement at random.
 public enum LoadoutStrategy {
 
+    /// Up to `limit` moves, best-first, chosen to cover every role.
+    ///
+    /// Moves are taken from prioritized buckets: super-effective damaging
+    /// moves first, then other damaging moves, boosts, disruption, and
+    /// finally anything left. Each bucket is sorted by score, and moves
+    /// already taken are skipped. Because all damaging moves come first,
+    /// boost and disrupt moves appear only once every damaging move fits
+    /// within `limit`; the generous default of 50 usually leaves room for
+    /// them.
     public static func shortlist<M: MoveData>(
         fighter: Combatant,
         opponent: Combatant,
@@ -25,6 +39,13 @@ public enum LoadoutStrategy {
         return collapse(buckets, limit: limit)
     }
 
+    /// A complete 4-move loadout without an LLM.
+    ///
+    /// Takes the best super-effective damaging move (if any), then fills
+    /// with the highest-scoring damaging moves. Boost and disrupt moves only
+    /// get in when there are fewer than four damaging moves, so in practice
+    /// this is an attacking set. Pair with ``adjust(picks:pool:fighter:opponent:typeChart:)``
+    /// for the AI side.
     public static func heuristicPick<M: MoveData>(
         fighter: Combatant,
         opponent: Combatant,
@@ -43,6 +64,10 @@ public enum LoadoutStrategy {
         return collapse(buckets, limit: 4)
     }
 
+    /// Pads `seed` (e.g. a partial or partly invalid LLM answer) to `count`
+    /// moves with the best-scoring unused moves from `moves`. Keeps the
+    /// seed's order and drops duplicate names; a seed that's already long
+    /// enough is truncated to `count`.
     public static func fill<M: MoveData>(
         seed: [M],
         fighter: Combatant,
@@ -56,6 +81,22 @@ public enum LoadoutStrategy {
         return collapse([seed, ranked], limit: count)
     }
 
+    /// Fairness handicap for an AI loadout: swaps its weakest damaging move
+    /// for a deliberately weaker one from `pool`.
+    ///
+    /// A loadout tuned by ``MoveScoring`` against the player's exact
+    /// Pokemon is close to optimal, which makes the AI feel unbeatable. One
+    /// mediocre attack gives the player openings without making the AI
+    /// obviously bad. The replacement:
+    /// - is a damaging move not already in the loadout that can hit the
+    ///   opponent,
+    /// - deals less than 55% of the loadout's best estimated damage,
+    /// - is drawn at random from the weaker half of such moves, so the AI
+    ///   isn't handicapped the same way every time.
+    ///
+    /// Returns `picks` unchanged if it has fewer than two damaging moves
+    /// (the AI keeps its main attack) or `pool` has no suitable
+    /// replacement.
     public static func adjust<M: MoveData>(
         picks: [M],
         pool: [M],
@@ -83,7 +124,8 @@ private extension LoadoutStrategy {
     }
 
     /// Walks each bucket in order, taking unseen moves until `limit`.
-    /// Shared dedupe core for shortlist / heuristicPick / fill.
+    /// Shared dedupe core for shortlist / heuristicPick / fill. Bucket order
+    /// is the priority order; dedupe is by move name.
     static func collapse<M: MoveData>(_ buckets: [[M]], limit: Int) -> [M] {
         var seen: Set<String> = []
         var out: [M] = []

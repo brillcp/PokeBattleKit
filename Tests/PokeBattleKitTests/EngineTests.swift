@@ -1,6 +1,8 @@
 import Testing
 @testable import PokeBattleKit
 
+/// Pins down round resolution in `BattleEngine`: turn order, damage, healing,
+/// fainting, recharge, status ticks, and phase transitions.
 @Suite("Battle engine")
 struct EngineTests {
     static let chart = TypeChart(attackers: [
@@ -57,7 +59,14 @@ struct EngineTests {
         )
     }
 
-    @Test func roundEmitsUsedEvents() {
+    /// The side that acted, if `event` is a `.used` event.
+    static func actingSide(of event: Event) -> Side? {
+        if case .used(let side, _) = event { return side }
+        return nil
+    }
+
+    @Test("A round emits a used event for each side")
+    func roundEmitsUsedEvents() {
         let p = Combatant(pokemon: Self.pokemon(name: "Player", speed: 100), moves: [])
         let o = Combatant(pokemon: Self.pokemon(name: "Opponent", speed: 50), moves: [])
         var engine = BattleEngine(state: BattleState(player: p, opponent: o), typeChart: Self.chart)
@@ -69,32 +78,29 @@ struct EngineTests {
         #expect(usedNames.count == 2)
     }
 
-    @Test func fasterGoesFirst() {
+    @Test("Faster Pokemon moves first")
+    func fasterGoesFirst() throws {
         let p = Combatant(pokemon: Self.pokemon(name: "Fast", speed: 200), moves: [])
         let o = Combatant(pokemon: Self.pokemon(name: "Slow", speed: 10), moves: [])
         var engine = BattleEngine(state: BattleState(player: p, opponent: o), typeChart: Self.chart)
         let events = engine.resolveRound(playerMove: Self.move(), opponentMove: Self.move())
-        if case .used(.player, _) = events.first {
-            // Player went first as expected
-        } else {
-            Issue.record("Faster Pokemon should go first")
-        }
+        let first = try #require(events.first)
+        #expect(Self.actingSide(of: first) == .player, "Faster Pokemon should go first")
     }
 
-    @Test func priorityOverridesSpeed() {
+    @Test("Priority move goes first regardless of speed")
+    func priorityOverridesSpeed() throws {
         let p = Combatant(pokemon: Self.pokemon(name: "Slow", speed: 10), moves: [])
         let o = Combatant(pokemon: Self.pokemon(name: "Fast", speed: 200), moves: [])
         var engine = BattleEngine(state: BattleState(player: p, opponent: o), typeChart: Self.chart)
         let quickAttack = Self.move(name: "quick-attack", priority: 1)
         let events = engine.resolveRound(playerMove: quickAttack, opponentMove: Self.move())
-        if case .used(.player, _) = events.first {
-            // Priority move went first
-        } else {
-            Issue.record("Priority move should go first regardless of speed")
-        }
+        let first = try #require(events.first)
+        #expect(Self.actingSide(of: first) == .player, "Priority move should go first regardless of speed")
     }
 
-    @Test func damageReducesHP() {
+    @Test("Damaging move reduces the defender's HP")
+    func damageReducesHP() {
         let p = Combatant(pokemon: Self.pokemon(name: "Attacker", speed: 200), moves: [])
         let o = Combatant(pokemon: Self.pokemon(name: "Defender", speed: 10), moves: [])
         var engine = BattleEngine(state: BattleState(player: p, opponent: o), typeChart: Self.chart)
@@ -103,7 +109,8 @@ struct EngineTests {
         #expect(engine.state.opponent.currentHP < startHP)
     }
 
-    @Test func faintEndsMatch() {
+    @Test("Fainting the opponent ends the match")
+    func faintEndsMatch() {
         let p = Combatant(pokemon: Self.pokemon(name: "Attacker", attack: 999, speed: 200), moves: [])
         let o = Combatant(pokemon: Self.pokemon(name: "Victim", hp: 1, speed: 10), moves: [])
         var engine = BattleEngine(state: BattleState(player: p, opponent: o), typeChart: Self.chart)
@@ -114,7 +121,8 @@ struct EngineTests {
         #expect(fainted)
     }
 
-    @Test func healingRestoresHP() {
+    @Test("Healing move restores HP")
+    func healingRestoresHP() {
         var p = Combatant(pokemon: Self.pokemon(name: "Healer", speed: 200), moves: [])
         p.currentHP = p.maxHP / 2
         let halfHP = p.currentHP
@@ -125,19 +133,21 @@ struct EngineTests {
         #expect(engine.state.player.currentHP > halfHP)
     }
 
-    @Test func rechargeMoveSkipsNextTurn() {
+    @Test("Recharge move skips the user's next turn")
+    func rechargeMoveSkipsNextTurn() throws {
         let p = Combatant(pokemon: Self.pokemon(name: "Recharg", speed: 200), moves: [])
         let o = Combatant(pokemon: Self.pokemon(name: "Foe", speed: 10), moves: [])
         var engine = BattleEngine(state: BattleState(player: p, opponent: o), typeChart: Self.chart)
         let hyperBeam = Self.move(name: "hyper-beam", power: 150, isRechargeMove: true)
         _ = engine.resolveRound(playerMove: hyperBeam, opponentMove: Self.move(power: 0))
-        #expect(engine.state.player.mustRecharge == true)
+        try #require(engine.state.player.mustRecharge)
         let events2 = engine.resolveRound(playerMove: Self.move(), opponentMove: Self.move(power: 0))
         let recharging = events2.contains { if case .recharging(.player) = $0 { return true }; return false }
         #expect(recharging)
     }
 
-    @Test func statusTickDamage() {
+    @Test("Burn deals damage at the end of the round")
+    func statusTickDamage() {
         var p = Combatant(pokemon: Self.pokemon(name: "Burned", speed: 200), moves: [])
         p.status = .burn
         let o = Combatant(pokemon: Self.pokemon(name: "Foe", speed: 10), moves: [])
@@ -147,13 +157,13 @@ struct EngineTests {
         #expect(engine.state.player.currentHP < startHP)
     }
 
-    @Test func phaseResetsAfterRound() {
+    @Test("Phase resets to move selection after a non-fatal round")
+    func phaseResetsAfterRound() {
         let p = Combatant(pokemon: Self.pokemon(speed: 100), moves: [])
         let o = Combatant(pokemon: Self.pokemon(speed: 50), moves: [])
         var engine = BattleEngine(state: BattleState(player: p, opponent: o), typeChart: Self.chart)
         _ = engine.resolveRound(playerMove: Self.move(power: 10), opponentMove: Self.move(power: 10))
-        if case .selectingMove = engine.state.phase {} else {
-            Issue.record("Phase should reset to selectingMove after non-fatal round")
-        }
+        let isSelectingMove = if case .selectingMove = engine.state.phase { true } else { false }
+        #expect(isSelectingMove, "Phase should reset to selectingMove after non-fatal round")
     }
 }

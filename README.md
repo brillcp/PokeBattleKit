@@ -15,17 +15,18 @@ Used in [PokedexUI](https://github.com/brillcp/pokedexui). Written by [Viktor Gi
   - `OpponentStrategy` + `Candidate`: opponent pool filtering and mutual-threat ranking
 - **PokeAPI networking + disk cache**: fetches and caches all moves (~937) and type data on first launch, reads from disk on subsequent launches
 - **Protocol-driven**: `MoveData`, `PokemonData`, and `TypeEffectivenessProviding` let consumers use their own model types
+- **Swift 6 concurrency-safe**: value-type, `Sendable` engine and state; the shared catalogue is guarded by a `Mutex` (see [Concurrency](#concurrency))
 
 ## Requirements
 
-- iOS 18+ / macOS 15+
-- Swift 6.0+
+- iOS 18+ / macOS 15+ (the `Synchronization` framework's `Mutex`)
+- Swift 6.0+ (Swift 6 language mode)
 
 ## Installation
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/brillcp/PokeBattleKit", .upToNextMinor(from: "0.0.9"))
+    .package(url: "https://github.com/brillcp/PokeBattleKit", .upToNextMajor(from: "0.1.4"))
 ]
 ```
 
@@ -41,7 +42,7 @@ import PokeBattleKit
 try await PokeBattleKit.initialize()
 ```
 
-Subsequent calls are no-ops. The type chart and move catalogue are then available via `PokeBattleKit.typeChart` and `PokeBattleKit.allMoves`.
+Subsequent calls are no-ops, and concurrent calls share a single in-flight load. If loading fails, the error is thrown and the next call retries. The type chart and move catalogue are then available via `PokeBattleKit.typeChart` and `PokeBattleKit.allMoves`, from any thread.
 
 ### Running a battle
 
@@ -59,7 +60,7 @@ for event in events {
 
 ### AI strategies
 
-The AI layer provides deterministic heuristics designed to pair with an LLM (or work standalone):
+The AI layer provides heuristics designed to pair with an LLM (or work standalone). Scoring and picking are deterministic; the only randomness is a little variety in `OpponentStrategy.balancedPool` (shuffles the top candidates) and the fairness handicap in `LoadoutStrategy.adjust`:
 
 ```swift
 let chart = PokeBattleKit.typeChart
@@ -103,19 +104,46 @@ All scoring weights are public in `MoveScoring.Weights`. Fork and adjust to chan
 
 See [`MoveScoring.swift`](Sources/PokeBattleKit/AI/MoveScoring.swift) for the full list.
 
+## Concurrency
+
+PokeBattleKit builds in the **Swift 6 language mode**, so data-race safety is checked by the compiler:
+
+| Type | Model | Why |
+| --- | --- | --- |
+| `BattleEngine`, `BattleState`, `Combatant`, `Event`, `Move`, `TypeChart` | `Sendable` value types | Copy freely between actors; mutate a local `var engine` |
+| `PokeBattleKit` catalogue (moves + type chart) | `Mutex`-guarded static state (Synchronization) | Written once by `initialize()`, read from any thread without `nonisolated(unsafe)` |
+| `PokeAPIClient` (internal) | Stateless `Sendable` struct | ~950 move requests download and decode in parallel task-group children |
+| `DiskCache` (internal) | `Sendable` struct | Atomic JSON writes in the Caches directory |
+
+The AI strategies (`MoveScoring`, `MoveStrategy`, `LoadoutStrategy`, `OpponentStrategy`) are pure static functions over `Sendable` inputs, so they can run on any actor, including off the main thread for heavy pool scoring.
+
+## Testing
+
+The test suite uses **Swift Testing** (`import Testing`), with descriptive `@Test("…")` names, parameterized tests (`@Test(arguments:)`) for input/expected tables, and `#require` for preconditions. Run it with:
+
+```sh
+swift test
+```
+
+## Modernization
+
+The Swift Testing suite follows the `modernize-tests` guidance from the **agent skills Apple ships for Xcode's coding assistant** (export them with `xcrun agent skills export --output-dir <path>`): descriptive test names, parameterized tests, and `#require` for preconditions.
+
+Separately, a Swift 6 concurrency pass replaced the `nonisolated(unsafe)` globals with a `Mutex` and moved the network client off a serializing actor, so responses decode in parallel.
+
 ## Architecture
 
 ```
 PokeBattleKit/
-  PokeBattleKit.swift     Entry point, initialize(), move lookup
+  PokeBattleKit.swift     Entry point, initialize(), move lookup (Mutex-guarded catalogue)
   AI/                     MoveScoring, MoveStrategy, LoadoutStrategy, OpponentStrategy
-  Engine/                 BattleEngine, DamageCalculator
+  Engine/                 BattleEngine, DamageCalculator, StatStage
   Models/                 Move (Codable model from PokeAPI)
   MoveClassification/     DamageClass, recharge/self-debuff/charging sets
-  Networking/             PokeAPIClient (internal, fetches moves + types)
+  Networking/             PokeAPIClient + PokeAPI response models (internal)
   Cache/                  DiskCache (internal, JSON file persistence)
   Protocols/              MoveData, PokemonData, TypeEffectivenessProviding
-  State/                  Combatant, BattleState, Event, Side, Status, MoveSnapshot
+  State/                  Combatant, BattleState, Event, Phase, Side, Status, MoveSnapshot
   TypeChart/              TypeChart, TypeMatchup
 ```
 

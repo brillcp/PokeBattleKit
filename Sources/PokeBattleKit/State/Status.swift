@@ -1,6 +1,13 @@
 import Foundation
 
-/// Status ailments a combatant can have.
+/// Status ailments a combatant can have. A combatant has at most one at a
+/// time, and a new ailment only lands on a ``none`` target.
+///
+/// Effects in ``BattleEngine``:
+/// - ``paralysis``: speed halved, 25% chance each turn to be fully paralyzed.
+/// - ``burn``: physical damage halved, loses 1/16 max HP each round.
+/// - ``poison``: loses 1/8 max HP each round (Toxic is treated the same).
+/// - ``sleep``: can't act until the sleep counter runs out.
 public enum Status: String, Sendable, Codable {
     case none
     case paralysis
@@ -8,6 +15,7 @@ public enum Status: String, Sendable, Codable {
     case poison
     case sleep
 
+    /// Short badge text ("PAR", "BRN", ...); empty for ``none``.
     public var displayName: String {
         switch self {
         case .none: return ""
@@ -18,6 +26,7 @@ public enum Status: String, Sendable, Codable {
         }
     }
 
+    /// Adjective for battle text, e.g. "Pikachu is paralyzed".
     public var label: String {
         switch self {
         case .none: return "healthy"
@@ -32,6 +41,8 @@ public enum Status: String, Sendable, Codable {
 // MARK: - Internal
 
 extension Status {
+    /// Maps a PokeAPI ailment name. Ailments the engine doesn't model
+    /// (confusion, freeze, trap, ...) become ``none`` and are ignored.
     init(ailment: String) {
         switch ailment {
         case "paralysis": self = .paralysis

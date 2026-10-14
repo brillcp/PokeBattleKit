@@ -1,6 +1,12 @@
 import Foundation
 
 /// Immutable, Sendable value copy of a move for use inside the engine.
+///
+/// ``MoveData`` isn't `Sendable` (so app-side model classes can conform),
+/// which means an arbitrary conformer can't safely be stored in a
+/// ``Combatant`` or cross into a background AI task. Snapshotting with
+/// ``init(from:)`` copies every field into a plain struct that can. Derived
+/// values such as ``isRechargeMove`` are captured as they were at copy time.
 public struct MoveSnapshot: MoveData, Codable, Hashable, Sendable {
     public let name: String
     public let displayName: String

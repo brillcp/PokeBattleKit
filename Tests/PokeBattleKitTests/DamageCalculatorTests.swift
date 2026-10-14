@@ -1,6 +1,8 @@
 import Testing
 @testable import PokeBattleKit
 
+/// Pins down damage estimation (STAB, immunity, super-effective cap) and the
+/// move-selection helpers built on it (`guaranteedKO`, `strongestMove`).
 @Suite("Damage calculator")
 struct DamageCalculatorTests {
     static let chart = TypeChart(attackers: [
@@ -34,7 +36,8 @@ struct DamageCalculatorTests {
         )
     }
 
-    @Test func estimatePositiveDamage() {
+    @Test("Super-effective damaging move estimates positive damage")
+    func estimatePositiveDamage() {
         let attacker = Combatant(pokemon: Self.pokemon(types: ["fire"]), moves: [])
         let defender = Combatant(pokemon: Self.pokemon(types: ["grass"]), moves: [])
         let m = Self.move(name: "flamethrower", power: 90, damageClass: "special", typeName: "fire")
@@ -42,7 +45,8 @@ struct DamageCalculatorTests {
         #expect(dmg > 0)
     }
 
-    @Test func estimateSTABBoosts() {
+    @Test("STAB boosts estimated damage")
+    func estimateSTABBoosts() {
         let attacker = Combatant(pokemon: Self.pokemon(types: ["fire"]), moves: [])
         let defender = Combatant(pokemon: Self.pokemon(types: ["normal"]), moves: [])
         let stab = Self.move(name: "ember", power: 40, damageClass: "special", typeName: "fire")
@@ -52,7 +56,8 @@ struct DamageCalculatorTests {
         #expect(stabDmg > noStabDmg)
     }
 
-    @Test func estimateImmunityReturnsZero() {
+    @Test("Immune defender takes zero estimated damage")
+    func estimateImmunityReturnsZero() {
         let attacker = Combatant(pokemon: Self.pokemon(types: ["normal"]), moves: [])
         let defender = Combatant(pokemon: Self.pokemon(types: ["ghost"]), moves: [])
         let m = Self.move(name: "tackle", power: 50, typeName: "normal")
@@ -60,7 +65,8 @@ struct DamageCalculatorTests {
         #expect(dmg == 0)
     }
 
-    @Test func estimateStatusMoveReturnsZero() {
+    @Test("Status move estimates zero damage")
+    func estimateStatusMoveReturnsZero() {
         let attacker = Combatant(pokemon: Self.pokemon(), moves: [])
         let defender = Combatant(pokemon: Self.pokemon(), moves: [])
         let m = Self.move(name: "thunder-wave", power: nil, damageClass: "status", typeName: "electric")
@@ -68,7 +74,8 @@ struct DamageCalculatorTests {
         #expect(dmg == 0)
     }
 
-    @Test func superEffectiveCapped() {
+    @Test("Super-effective cap lowers estimated damage")
+    func superEffectiveCapped() {
         let attacker = Combatant(pokemon: Self.pokemon(types: ["electric"]), moves: [])
         let defender = Combatant(pokemon: Self.pokemon(types: ["water"]), moves: [])
         let m = Self.move(name: "thunderbolt", power: 90, damageClass: "special", typeName: "electric")
@@ -77,7 +84,8 @@ struct DamageCalculatorTests {
         #expect(capped < uncapped)
     }
 
-    @Test func guaranteedKOFindsKiller() {
+    @Test("Guaranteed KO finds a move that knocks out the defender")
+    func guaranteedKOFindsKiller() throws {
         var defender = Combatant(pokemon: Self.pokemon(types: ["grass"]), moves: [])
         defender.currentHP = 5
         let attacker = Combatant(pokemon: Self.pokemon(types: ["fire"]), moves: [])
@@ -85,10 +93,12 @@ struct DamageCalculatorTests {
         let result = DamageCalculator.guaranteedKO(
             attacker: attacker, defender: defender, moves: [killer], typeChart: Self.chart
         )
-        #expect(result?.name == "flamethrower")
+        let move = try #require(result)
+        #expect(move.name == "flamethrower")
     }
 
-    @Test func guaranteedKONilWhenAllTooWeak() {
+    @Test("Guaranteed KO is nil when every move is too weak")
+    func guaranteedKONilWhenAllTooWeak() {
         let attacker = Combatant(pokemon: Self.pokemon(), moves: [])
         let defender = Combatant(pokemon: Self.pokemon(), moves: [])
         let weak = Self.move(name: "tackle", power: 10)
@@ -98,7 +108,8 @@ struct DamageCalculatorTests {
         #expect(result == nil)
     }
 
-    @Test func guaranteedKOSkipsBelowAccuracyFloor() {
+    @Test("Guaranteed KO skips moves below the accuracy floor")
+    func guaranteedKOSkipsBelowAccuracyFloor() {
         var defender = Combatant(pokemon: Self.pokemon(types: ["grass"]), moves: [])
         defender.currentHP = 5
         let attacker = Combatant(pokemon: Self.pokemon(types: ["fire"]), moves: [])
@@ -111,7 +122,8 @@ struct DamageCalculatorTests {
         #expect(result == nil)
     }
 
-    @Test func guaranteedKOPicksHigherExpectedDamage() {
+    @Test("Guaranteed KO picks the move with higher expected damage")
+    func guaranteedKOPicksHigherExpectedDamage() throws {
         var defender = Combatant(pokemon: Self.pokemon(types: ["grass"]), moves: [])
         defender.currentHP = 5
         let attacker = Combatant(pokemon: Self.pokemon(types: ["fire"]), moves: [])
@@ -127,22 +139,25 @@ struct DamageCalculatorTests {
             moves: [weakerAccurate, strongerSlightlyLessAccurate],
             typeChart: Self.chart
         )
-        #expect(result?.name == "flamethrower")
+        let move = try #require(result)
+        #expect(move.name == "flamethrower")
     }
 
-    @Test func strongestMoveReturnsHighestDamage() {
+    @Test("Strongest move returns the highest-damage move")
+    func strongestMoveReturnsHighestDamage() throws {
         let attacker = Combatant(pokemon: Self.pokemon(types: ["fire"]), moves: [])
         let defender = Combatant(pokemon: Self.pokemon(types: ["grass"]), moves: [])
         let weak = Self.move(name: "ember", power: 40, damageClass: "special", typeName: "fire")
         let strong = Self.move(name: "flamethrower", power: 90, damageClass: "special", typeName: "fire")
-        let result = DamageCalculator.strongestMove(
+        let result = try #require(DamageCalculator.strongestMove(
             attacker: attacker, defender: defender, moves: [weak, strong], typeChart: Self.chart
-        )
-        #expect(result?.move.name == "flamethrower")
-        #expect((result?.damage ?? 0) > 0)
+        ))
+        #expect(result.move.name == "flamethrower")
+        #expect(result.damage > 0)
     }
 
-    @Test func strongestMoveNilWhenAllImmune() {
+    @Test("Strongest move is nil when the defender is immune to every move")
+    func strongestMoveNilWhenAllImmune() {
         let attacker = Combatant(pokemon: Self.pokemon(types: ["normal"]), moves: [])
         let defender = Combatant(pokemon: Self.pokemon(types: ["ghost"]), moves: [])
         let m = Self.move(name: "tackle", power: 50, typeName: "normal")
@@ -152,7 +167,8 @@ struct DamageCalculatorTests {
         #expect(result == nil)
     }
 
-    @Test func strongestMoveNilWhenOnlyStatusMoves() {
+    @Test("Strongest move is nil when only status moves are available")
+    func strongestMoveNilWhenOnlyStatusMoves() {
         let attacker = Combatant(pokemon: Self.pokemon(), moves: [])
         let defender = Combatant(pokemon: Self.pokemon(), moves: [])
         let m = Self.move(name: "growl", power: nil, damageClass: "status")

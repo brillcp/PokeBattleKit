@@ -1,6 +1,8 @@
 import Testing
 @testable import PokeBattleKit
 
+/// Pins down type effectiveness lookups: single and dual defender types,
+/// immunities, unknown attackers, and best-STAB selection.
 @Suite("Type chart multiplier")
 struct TypeChartTests {
     static let chart = TypeChart(attackers: [
@@ -21,50 +23,34 @@ struct TypeChartTests {
         ),
     ])
 
-    @Test func superEffective() {
-        let mult = Self.chart.multiplier(attacking: "fire", defenders: ["grass"])
-        #expect(mult == 2.0)
+    @Test(
+        "Multiplier for attacking type against defender types",
+        arguments: [
+            (attacking: "fire", defenders: ["grass"], expected: 2.0),          // super effective
+            (attacking: "fire", defenders: ["water"], expected: 0.5),          // not very effective
+            (attacking: "normal", defenders: ["ghost"], expected: 0.0),        // immune
+            (attacking: "fire", defenders: ["grass", "ice"], expected: 4.0),   // dual-type super effective
+            (attacking: "fire", defenders: ["grass", "water"], expected: 1.0), // dual-type mixed
+            (attacking: "fairy", defenders: ["fire"], expected: 1.0),          // unknown attacker is neutral
+        ]
+    )
+    func multiplier(attacking: String, defenders: [String], expected: Double) {
+        #expect(Self.chart.multiplier(attacking: attacking, defenders: defenders) == expected)
     }
 
-    @Test func notVeryEffective() {
-        let mult = Self.chart.multiplier(attacking: "fire", defenders: ["water"])
-        #expect(mult == 0.5)
-    }
-
-    @Test func immune() {
-        let mult = Self.chart.multiplier(attacking: "normal", defenders: ["ghost"])
-        #expect(mult == 0.0)
-    }
-
-    @Test func dualTypeSuperEffective() {
-        let mult = Self.chart.multiplier(attacking: "fire", defenders: ["grass", "ice"])
-        #expect(mult == 4.0)
-    }
-
-    @Test func dualTypeMixed() {
-        let mult = Self.chart.multiplier(attacking: "fire", defenders: ["grass", "water"])
-        #expect(mult == 1.0)
-    }
-
-    @Test func unknownAttackerDefaultsToNeutral() {
-        let mult = Self.chart.multiplier(attacking: "fairy", defenders: ["fire"])
-        #expect(mult == 1.0)
-    }
-
-    @Test func bestSTABMultiplierMaxesAttackers() {
-        // Fire/water attacker vs grass: fire 2x, water 0.5x → max 2.0
-        let result = Self.chart.bestSTABMultiplier(attackerTypes: ["fire", "water"], defenderTypes: ["grass"])
-        #expect(result == 2.0)
-    }
-
-    @Test func bestSTABMultiplierPicksImmunity() {
-        // Normal attacker vs ghost: 0x. Single type, max is still 0.
-        let result = Self.chart.bestSTABMultiplier(attackerTypes: ["normal"], defenderTypes: ["ghost"])
-        #expect(result == 0.0)
-    }
-
-    @Test func bestSTABMultiplierEmptyAttackersReturnsNeutral() {
-        let result = Self.chart.bestSTABMultiplier(attackerTypes: [], defenderTypes: ["grass"])
-        #expect(result == 1.0)
+    @Test(
+        "Best STAB multiplier takes the maximum over attacker types",
+        arguments: [
+            // Fire/water vs grass: fire 2x, water 0.5x -> max 2.0
+            (attackerTypes: ["fire", "water"], defenderTypes: ["grass"], expected: 2.0),
+            // Normal vs ghost: 0x. Single type, max is still 0.
+            (attackerTypes: ["normal"], defenderTypes: ["ghost"], expected: 0.0),
+            // No attacker types -> neutral
+            (attackerTypes: [], defenderTypes: ["grass"], expected: 1.0),
+        ]
+    )
+    func bestSTABMultiplier(attackerTypes: [String], defenderTypes: [String], expected: Double) {
+        let result = Self.chart.bestSTABMultiplier(attackerTypes: attackerTypes, defenderTypes: defenderTypes)
+        #expect(result == expected)
     }
 }

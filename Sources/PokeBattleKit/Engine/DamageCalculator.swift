@@ -1,17 +1,51 @@
 import Foundation
 
-/// Bulbapedia-faithful damage formula and deterministic estimator for AI.
+/// The Gen V+ damage formula (as documented on Bulbapedia), plus
+/// deterministic helpers the AI uses to reason about damage.
+///
+/// There are two entry points with deliberately different guarantees:
+///
+/// - `computeDamage` is what ``BattleEngine`` calls to resolve a hit. It
+///   rolls a critical hit and the 85–100% damage spread, so it's random.
+/// - ``estimateDamage(move:attacker:defender:typeChart:superEffectiveCap:)``
+///   uses the same formula without crit, random roll, or burn, so it's
+///   deterministic. It equals the *highest* non-critical roll the engine can
+///   produce, which makes AI decisions repeatable and testable.
+///
+/// Simplifications relative to the games, shared by both:
+/// - Level is fixed at 50 for everyone.
+/// - `A` and `D` are the combatants' raw *base* stats (no IVs, EVs, natures
+///   or level scaling), multiplied by the current stat-stage multiplier.
+/// - The type multiplier is capped at 1.5 when super effective (house rule,
+///   see `superEffectiveCap`), so a 4x weakness hits like a 2x one.
+/// - Everything is computed in floating point and truncated once at the end,
+///   rather than floored after each step, so results can differ from the
+///   cartridge by a point or two.
 public enum DamageCalculator {
 
     /// Full damage computation with all modifiers. Used internally by
-    /// `Engine` when resolving a hit.
+    /// ``BattleEngine`` when resolving a hit; callers must have already
+    /// excluded status moves and moves without positive power.
     ///
     /// Formula per Bulbapedia:
     /// `((2*Level/5+2) * Power * A/D) / 50 + 2`
     /// `* Critical * random(0.85-1.0) * STAB * Type * Burn`
     ///
-    /// Super-effective is capped at `superEffectiveCap` (default 1.5) to
-    /// prevent runaway one-shots.
+    /// With `Level` = 50 the first factor is a constant 22. The modifiers:
+    /// - **Critical:** 1-in-32 chance, 1.5x. Unlike the games, a crit does
+    ///   not ignore stat stages.
+    /// - **Random:** uniform in 0.85...1.0, the classic damage spread.
+    /// - **STAB:** 1.5x when the move's type matches one of the attacker's
+    ///   types.
+    /// - **Type:** product over the defender's types from `typeChart`;
+    ///   super-effective values are capped at `superEffectiveCap` (default
+    ///   1.5) to prevent runaway one-shots. Resisted and immune values are
+    ///   not touched.
+    /// - **Burn:** halves physical damage dealt by a burned attacker.
+    ///
+    /// - Returns: The damage (0 against an immune target, otherwise at least
+    ///   1), the *uncapped* type multiplier so UIs can still say "It's super
+    ///   effective!" for a 4x hit, and whether the hit was critical.
     static func computeDamage(
         power: Int,
         move: some MoveData,
@@ -53,9 +87,15 @@ public enum DamageCalculator {
 
     /// Deterministic damage estimate (no randomness, no crit) for AI scoring.
     ///
+    /// Uses the same formula, stat stages, STAB and capped type multiplier
+    /// as the engine, with the random factor fixed at 1.0. The result is the
+    /// maximum non-critical damage; the engine's actual roll lands between
+    /// roughly 85% and 100% of it. The burn penalty is not applied, so the
+    /// estimate overstates a burned attacker's physical damage.
+    ///
     /// `typeChart` is the sole input for type effectiveness; callers cannot
-    /// pass arbitrary multipliers. Status-class moves and zero-power moves
-    /// return 0.
+    /// pass arbitrary multipliers. Status-class moves, moves without positive
+    /// power, and moves the defender is immune to return 0.
     public static func estimateDamage(
         move: some MoveData,
         attacker: Combatant,
@@ -86,8 +126,15 @@ public enum DamageCalculator {
     /// Move that lands a KO this turn, accounting for accuracy.
     ///
     /// Filters to moves whose estimated damage covers the defender's current
-    /// HP and whose accuracy is at least 85%. Tiebreaks on accuracy-weighted
-    /// expected damage. Returns `nil` when no move qualifies.
+    /// HP and whose accuracy is at least `accuracyFloor` (85% by default;
+    /// moves with `nil` accuracy never miss and count as 100%). Among those,
+    /// picks the highest accuracy-weighted expected damage. Returns `nil`
+    /// when no move qualifies.
+    ///
+    /// "Guaranteed" is relative to
+    /// ``estimateDamage(move:attacker:defender:typeChart:superEffectiveCap:)``,
+    /// which is the top damage roll: in the engine the move can still miss or
+    /// roll low and leave the defender on a sliver of HP.
     public static func guaranteedKO<Move: MoveData>(
         attacker: Combatant,
         defender: Combatant,
@@ -106,8 +153,9 @@ public enum DamageCalculator {
         return killers.max { $0.1 < $1.1 }?.0
     }
 
-    /// Move that deals the most damage against `defender`. Returns `nil` if
-    /// no damaging move is viable (zero power, status, or fully resisted).
+    /// Move with the highest estimated damage against `defender`, ignoring
+    /// accuracy. Returns `nil` if no move would deal damage (zero power,
+    /// status class, or the defender is immune).
     public static func strongestMove<Move: MoveData>(
         attacker: Combatant,
         defender: Combatant,

@@ -1,5 +1,10 @@
 import Foundation
 
+// Decodable mirrors of the PokeAPI JSON the client needs. Property names are
+// camelCase; `PokeAPIClient` decodes with `.convertFromSnakeCase`, so
+// `damage_class` maps to `damageClass` and so on. Payload fields not
+// declared here are ignored.
+
 /// PokeAPI list envelope (e.g. `/move?limit=2000`).
 struct APIListResponse: Decodable, Sendable {
     let results: [APIListItem]
@@ -24,6 +29,8 @@ struct APIMoveResponse: Decodable, Sendable {
     let statChanges: [StatChange]
     let effectChance: Int?
 
+    /// Optional in PokeAPI (absent for some moves); ``Move`` falls back to
+    /// neutral defaults when it's missing.
     struct Meta: Decodable, Sendable {
         let ailment: NamedRef
         let ailmentChance: Int
@@ -43,6 +50,8 @@ struct APITypeResponse: Decodable, Sendable {
     let name: String
     let damageRelations: DamageRelations
 
+    /// Only the `*DamageTo` lists feed ``TypeChart``; the `*DamageFrom`
+    /// lists are decoded but unused.
     struct DamageRelations: Decodable, Sendable {
         let doubleDamageTo: [NamedRef]
         let doubleDamageFrom: [NamedRef]

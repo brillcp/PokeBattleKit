@@ -1,21 +1,48 @@
 import Foundation
 
 /// Discrete event emitted during a turn for sequential animation playback.
+///
+/// ``BattleEngine/resolveRound(playerMove:opponentMove:)`` returns the
+/// round's events in the order they happened. The engine has already applied
+/// all of them to its ``BattleEngine/state`` by the time you receive them, so
+/// a UI typically walks the list one event at a time, animating each (HP bar
+/// drain, message text, faint) and tracking displayed HP itself, then syncs
+/// to the final state. The `Side` in each case is the combatant the event
+/// happens *to*: for ``damaged(_:amount:effectiveness:crit:)`` that's the
+/// target, for ``used(_:moveName:)`` the user.
+///
+/// `Codable` with a flat `"type"` discriminator (e.g.
+/// `{"type":"damaged","side":"opponent","amount":42,...}`) so event logs can
+/// be stored or sent to another process.
 public enum Event: Sendable, Codable {
+    /// A side starts its action. Always the first event of an action, even
+    /// when the move then fails.
     case used(Side, moveName: String)
     case missed(Side)
+    /// HP lost by `side`. `effectiveness` is the raw, uncapped type
+    /// multiplier (use it for "super effective" messages). An `amount` and
+    /// `effectiveness` of 0 means the move had no effect.
     case damaged(Side, amount: Int, effectiveness: Double, crit: Bool)
     case statusApplied(Side, Status)
+    /// End-of-round burn or poison damage.
     case statusTick(Side, Status, amount: Int)
+    /// A stat stage change; `stat` is the PokeAPI stat name and `delta` the
+    /// requested change, which may have been clamped at +/-6.
     case statChanged(Side, stat: String, delta: Int)
     case healed(Side, amount: Int)
+    /// Damage the attacker takes from its own move (negative drain).
     case recoil(Side, amount: Int)
+    /// The side spent its action recharging after a move like Hyper Beam.
     case recharging(Side)
     case wokeUp(Side)
     case fastAsleep(Side)
     case fullyParalyzed(Side)
+    /// Focus Punch failed because its user was hit first.
     case lostFocus(Side)
+    /// Emitted right before ``ended(winner:)``.
     case fainted(Side)
+    /// The battle is over; always the last event. The engine always reports
+    /// a winner; `nil` is available to hosts that model draws or forfeits.
     case ended(winner: Side?)
 
     // MARK: - Codable

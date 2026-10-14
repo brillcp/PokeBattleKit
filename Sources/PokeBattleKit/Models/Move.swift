@@ -1,10 +1,16 @@
 import Foundation
 
-/// Concrete move type owned by PokeBattleKit.
+/// A move as loaded from PokeAPI by ``PokeBattleKit/initialize()``.
+///
+/// Fields mirror PokeAPI's `/move/{name}` response, flattened (the `meta`
+/// block's values default to "none"/0 when PokeAPI omits it). Look moves up
+/// with ``PokeBattleKit/move(named:)`` or ``PokeBattleKit/allMoves``, and
+/// convert to a ``MoveSnapshot`` to put them in a ``Combatant``.
 public struct Move: MoveData, Codable, Hashable, Sendable {
     public let name: String
     public let power: Int?
     public let accuracy: Int?
+    /// Power points. Kept for display; the engine doesn't track PP.
     public let pp: Int?
     public let priority: Int
     public let damageClass: String
@@ -14,10 +20,12 @@ public struct Move: MoveData, Codable, Hashable, Sendable {
     public let drain: Int
     public let healing: Int
     public let effectChance: Int?
+    /// PokeAPI's move category, e.g. "damage", "ailment", "net-good-stats".
     public let category: String
     public let statChangeNames: [String]
     public let statChangeDeltas: [Int]
 
+    /// Title-cased API name, e.g. "thunder-punch" -> "Thunder Punch".
     public var displayName: String {
         name.replacingOccurrences(of: "-", with: " ").capitalized
     }

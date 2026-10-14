@@ -1,7 +1,9 @@
 import Testing
 @testable import PokeBattleKit
 
-@Suite("MoveScoring")
+/// Pins down in-battle move scoring heuristics: low-HP preferences and
+/// escalating penalties for repeating the same move.
+@Suite("Move scoring")
 struct MoveScoringTests {
 
     static let chart = TypeChart(attackers: [
@@ -113,30 +115,22 @@ struct MoveScoringTests {
 
     // MARK: - Recency penalties
 
-    @Test("Consecutive use penalty escalates correctly")
-    func recencyEscalation() {
+    /// Each case compares a move used `priorUses` times in a row against the
+    /// same move used once more (0 vs 1, 1 vs 2, 2 vs 3 consecutive uses).
+    @Test("Consecutive use penalty escalates with each repeat", arguments: 0...2)
+    func recencyEscalation(priorUses: Int) {
         let attacker = Self.pokemon()
         let defender = Self.pokemon()
         let move = Self.damageMove()
 
-        let fresh = MoveScoring.inBattleScore(
+        let fewer = MoveScoring.inBattleScore(
             move: move, attacker: attacker, defender: defender,
-            typeChart: Self.chart, recentMoves: []
+            typeChart: Self.chart, recentMoves: Array(repeating: move.name, count: priorUses)
         )
-        let once = MoveScoring.inBattleScore(
+        let more = MoveScoring.inBattleScore(
             move: move, attacker: attacker, defender: defender,
-            typeChart: Self.chart, recentMoves: [move.name]
+            typeChart: Self.chart, recentMoves: Array(repeating: move.name, count: priorUses + 1)
         )
-        let twice = MoveScoring.inBattleScore(
-            move: move, attacker: attacker, defender: defender,
-            typeChart: Self.chart, recentMoves: [move.name, move.name]
-        )
-        let thrice = MoveScoring.inBattleScore(
-            move: move, attacker: attacker, defender: defender,
-            typeChart: Self.chart, recentMoves: [move.name, move.name, move.name]
-        )
-        #expect(fresh > once,  "Used once should score less than fresh")
-        #expect(once  > twice, "Used twice should score less than once")
-        #expect(twice > thrice,"Used thrice should score less than twice")
+        #expect(fewer > more, "Used \(priorUses + 1)x (\(more)) should score less than \(priorUses)x (\(fewer))")
     }
 }

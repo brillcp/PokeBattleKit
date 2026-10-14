@@ -1,6 +1,12 @@
 import Foundation
 
 /// Simple JSON file cache in the app's Caches directory.
+///
+/// Files live in `Caches/PokeBattleKit/` and never expire; the OS may purge
+/// them under storage pressure, in which case the next launch re-downloads.
+/// Reads are best-effort: a missing or undecodable file (for example after
+/// a model change) returns `nil`, so the caller refetches and overwrites it.
+/// Writes are atomic, so a crash mid-save can't leave a truncated file.
 struct DiskCache: Sendable {
     private let directory: URL
 
