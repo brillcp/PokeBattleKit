@@ -8,7 +8,16 @@ let package = Package(
         .library(name: "PokeBattleKit", targets: ["PokeBattleKit"]),
     ],
     targets: [
-        .target(name: "PokeBattleKit", path: "Sources/PokeBattleKit"),
-        .testTarget(name: "PokeBattleKitTests", dependencies: ["PokeBattleKit"], path: "Tests/PokeBattleKitTests"),
+        .target(
+            name: "PokeBattleKit",
+            path: "Sources/PokeBattleKit",
+            resources: [.copy("Resources/strength-ratings.json")]
+        ),
+        .testTarget(
+            name: "PokeBattleKitTests",
+            dependencies: ["PokeBattleKit"],
+            path: "Tests/PokeBattleKitTests",
+            resources: [.copy("Resources/pokeapi-snapshot.json")]
+        ),
     ]
 )
