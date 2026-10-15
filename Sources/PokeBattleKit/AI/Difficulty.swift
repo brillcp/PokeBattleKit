@@ -3,8 +3,8 @@
 /// The main lever is the classic one: the opponent's level
 /// (``opponentLevelOffset``, applied by ``BattleRules/opponentLevel(for:)``).
 /// The offsets are calibrated with the balance simulation so a player who
-/// plays well wins about ``targetPlayerWinRate`` of battles: 80% on easy,
-/// 50% on fair, 30% on hard. The AI's play style changes with it, through
+/// plays well wins about ``targetPlayerWinRate`` of battles: 90% on easy,
+/// 50% on fair, 20% on hard. The AI's play style changes with it, through
 /// the strategies that make choices on its behalf:
 /// - ``easy``: the AI's loadout gets a deliberately weak attack (see
 ///   ``LoadoutStrategy/adjust(picks:pool:fighter:opponent:typeChart:difficulty:)``),
@@ -24,18 +24,18 @@ public enum Difficulty: String, Sendable, Codable, CaseIterable {
     /// AI or the battle rules.
     public var opponentLevelOffset: Int {
         switch self {
-        case .easy: -3
+        case .easy: -6
         case .fair: 0
-        case .hard: 4
+        case .hard: 7
         }
     }
 
     /// The share of battles a good player should win at this difficulty.
     public var targetPlayerWinRate: Double {
         switch self {
-        case .easy: 0.8
+        case .easy: 0.9
         case .fair: 0.5
-        case .hard: 0.3
+        case .hard: 0.2
         }
     }
 }

@@ -73,11 +73,11 @@ The AI layer is rule-based. Scoring is deterministic; picking depends on the `Di
 
 | Difficulty | Opponent level | Loadout | Move choice |
 | --- | --- | --- | --- |
-| `.easy` | 3 below the player | Strongest attack swapped for a weak one | Random among moves within 35% of the best |
+| `.easy` | 6 below the player | Strongest attack swapped for a weak one | Random among moves within 35% of the best |
 | `.fair` (default) | Same as the player | No handicap | Weighted random among moves within 10% of the best |
-| `.hard` | 4 above the player | No handicap | Always the best-scoring move |
+| `.hard` | 7 above the player | No handicap | Always the best-scoring move |
 
-The level gaps (`Difficulty.opponentLevelOffset`, applied with `BattleRules.opponentLevel(for:)`) are calibrated with the balance simulation so a good player wins about 80% / 50% / 30% of battles (`Difficulty.targetPlayerWinRate`); a test keeps them there.
+The level gaps (`Difficulty.opponentLevelOffset`, applied with `BattleRules.opponentLevel(for:)`) are calibrated with the balance simulation so a good player wins about 90% / 50% / 20% of battles (`Difficulty.targetPlayerWinRate`); a test keeps them there.
 
 `MoveStrategy.heuristicPick` and `OpponentStrategy.pick` take a `using:` random number generator for reproducible tests.
 

@@ -219,7 +219,7 @@ struct PokedexSimulationTests {
     @Test("Calibrate difficulty level offsets", .enabled(if: ProcessInfo.processInfo.environment["CALIBRATE"] != nil))
     func calibrateDifficulty() {
         for difficulty in [Difficulty.easy, .hard] {
-            let offsets = difficulty == .easy ? Array(stride(from: 0, through: -8, by: -1)) : Array(stride(from: 0, through: 8, by: 1))
+            let offsets = difficulty == .easy ? Array(stride(from: -3, through: -12, by: -1)) : Array(stride(from: 4, through: 12, by: 1))
             var results: [(Int, Double)] = []
             for offset in offsets {
                 // Averaged over three samples of matchups to beat the noise.
