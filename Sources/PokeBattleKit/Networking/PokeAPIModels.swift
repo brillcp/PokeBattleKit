@@ -28,6 +28,8 @@ struct APIMoveResponse: Decodable, Sendable {
     let meta: Meta?
     let statChanges: [StatChange]
     let effectChance: Int?
+    /// Who the move targets ("user", "selected-pokemon", ...).
+    let target: NamedRef?
 
     /// Optional in PokeAPI (absent for some moves); ``Move`` falls back to
     /// neutral defaults when it's missing.
@@ -37,6 +39,11 @@ struct APIMoveResponse: Decodable, Sendable {
         let drain: Int
         let healing: Int
         let category: NamedRef
+        /// Hit range for multi-hit moves; `nil` for single-hit moves.
+        let minHits: Int?
+        let maxHits: Int?
+        let critRate: Int?
+        let flinchChance: Int?
     }
 
     struct StatChange: Decodable, Sendable {

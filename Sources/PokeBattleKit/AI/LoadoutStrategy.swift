@@ -1,9 +1,10 @@
 /// Heuristic AI for pre-battle loadout construction. Flow:
-/// 1. `shortlist` curates a diverse 50-move pool for the host app's LLM.
-/// 2. `heuristicPick` returns the 4-move fallback when the LLM is
-///    unavailable or returns junk.
-/// 3. `fill` pads partial LLM picks up to 4.
-/// 4. `adjust` downgrades one damage move for fairness.
+/// 1. `shortlist` ranks a movepool best first, for a host app that wants
+///    to offer the choice to something else (a player, or a model).
+/// 2. `heuristicPick` returns a complete loadout; use it directly, or as the
+///    fallback when an external picker is unavailable or returns junk.
+/// 3. `fill` pads a partial external pick up to 4.
+/// 4. `adjust` applies the difficulty handicap (only on easy).
 ///
 /// All candidates are ranked with
 /// ``MoveScoring/score(move:fighter:opponent:typeChart:)`` against the
@@ -12,15 +13,15 @@
 /// deterministic except `adjust`, which picks its replacement at random.
 public enum LoadoutStrategy {
 
-    /// Up to `limit` moves, best-first, chosen to cover every role.
+    /// Up to `limit` moves, chosen to cover every role and returned
+    /// best-first by score.
     ///
-    /// Moves are taken from prioritized buckets: super-effective damaging
-    /// moves first, then other damaging moves, boosts, disruption, and
-    /// finally anything left. Each bucket is sorted by score, and moves
-    /// already taken are skipped. Because all damaging moves come first,
-    /// boost and disrupt moves appear only once every damaging move fits
-    /// within `limit`; the generous default of 50 usually leaves room for
-    /// them.
+    /// When `limit` is smaller than the pool, moves are picked from
+    /// prioritized buckets: super-effective damaging moves first, then
+    /// other damaging moves, boosts, disruption, and finally anything left,
+    /// so a short list still covers the roles. The picked moves are then
+    /// ordered by score, so "first" always means "best" (a weak
+    /// super-effective move doesn't sit above a strong neutral one).
     public static func shortlist<M: MoveData>(
         fighter: Combatant,
         opponent: Combatant,
@@ -36,36 +37,36 @@ public enum LoadoutStrategy {
             ranked.filter(\.isDisrupt),
             ranked
         ]
-        return collapse(buckets, limit: limit)
+        let picked = Set(collapse(buckets, limit: limit).map(\.name))
+        return ranked.filter { picked.contains($0.name) }
     }
 
-    /// A complete 4-move loadout without an LLM.
+    /// A complete loadout of up to four moves, built by role:
+    /// 1. the best attack,
+    /// 2. the best attack of a different type,
+    /// 3. the best support move (boost, status, or heal) if any is worth
+    ///    using against this opponent, otherwise another attack of a new
+    ///    type,
+    /// 4. the best remaining move: an attack of a new type or a support
+    ///    move of a different kind than slot 3.
     ///
-    /// Takes the best super-effective damaging move (if any), then fills
-    /// with the highest-scoring damaging moves. Boost and disrupt moves only
-    /// get in when there are fewer than four damaging moves, so in practice
-    /// this is an attacking set. Pair with ``adjust(picks:pool:fighter:opponent:typeChart:)``
-    /// for the AI side.
+    /// No two attacks share a type, so the set has coverage instead of
+    /// three ways to do the same thing. Slots that can't be filled by role
+    /// are topped up from the best-scoring leftovers. For the AI side, pass
+    /// the result through ``adjust(picks:pool:fighter:opponent:typeChart:difficulty:)``.
     public static func heuristicPick<M: MoveData>(
         fighter: Combatant,
         opponent: Combatant,
         moves: [M],
         typeChart: some TypeEffectivenessProviding
     ) -> [M] {
-        let ranked = rankedByScore(moves, fighter: fighter, opponent: opponent, typeChart: typeChart)
-        let se = ranked.filter { $0.isDamage && typeChart.multiplier(attacking: $0.typeName, defenders: opponent.typeNames) >= 2 }
-        let buckets: [[M]] = [
-            Array(se.prefix(1)),
-            ranked.filter(\.isDamage),
-            ranked.filter(\.isBoost),
-            ranked.filter(\.isDisrupt),
-            ranked
-        ]
-        return collapse(buckets, limit: 4)
+        complete(seed: [], fighter: fighter, opponent: opponent, moves: moves, typeChart: typeChart, count: 4)
     }
 
-    /// Pads `seed` (e.g. a partial or partly invalid LLM answer) to `count`
-    /// moves with the best-scoring unused moves from `moves`. Keeps the
+    /// Pads `seed` (e.g. a partial or partly invalid external pick) to `count`
+    /// moves using the same roles as
+    /// ``heuristicPick(fighter:opponent:moves:typeChart:)``, so the result
+    /// still has a second attack type and room for a support move. Keeps the
     /// seed's order and drops duplicate names; a seed that's already long
     /// enough is truncated to `count`.
     public static func fill<M: MoveData>(
@@ -77,17 +78,28 @@ public enum LoadoutStrategy {
         count: Int
     ) -> [M] {
         guard seed.count < count else { return Array(seed.prefix(count)) }
-        let ranked = rankedByScore(moves, fighter: fighter, opponent: opponent, typeChart: typeChart)
-        return collapse([seed, ranked], limit: count)
+        return complete(seed: seed, fighter: fighter, opponent: opponent, moves: moves, typeChart: typeChart, count: count)
     }
 
-    /// Fairness handicap for an AI loadout: swaps its weakest damaging move
-    /// for a deliberately weaker one from `pool`.
+    /// `moves` with `struggle` added when none of them can deal damage, so
+    /// every Pokémon can fight. In the games a Pokémon with nothing usable
+    /// left uses Struggle; Pokémon like Wobbuffet or Ditto, whose
+    /// battle-ready moves are all non-damaging here, get it the same way.
+    /// Pass PokeAPI's "struggle" move.
+    public static func withFallbackAttack<M: MoveData>(_ moves: [M], struggle: M?) -> [M] {
+        guard !moves.contains(where: \.isDamage), let struggle else { return moves }
+        return moves + [struggle]
+    }
+
+    /// Difficulty handicap for an AI loadout.
     ///
-    /// A loadout tuned by ``MoveScoring`` against the player's exact
-    /// Pokemon is close to optimal, which makes the AI feel unbeatable. One
-    /// mediocre attack gives the player openings without making the AI
-    /// obviously bad. The replacement:
+    /// On ``Difficulty/fair`` and ``Difficulty/hard`` the loadout is
+    /// returned unchanged. On ``Difficulty/easy`` its strongest damaging
+    /// move is swapped for a deliberately weaker one from `pool`, which
+    /// gives the player openings without making the AI obviously bad (it
+    /// keeps its other attacks). Swapping the strongest rather than the
+    /// weakest matters: the AI rarely uses its weakest attack, so losing it
+    /// changes nothing. The replacement:
     /// - is a damaging move not already in the loadout that can hit the
     ///   opponent,
     /// - deals less than 55% of the loadout's best estimated damage,
@@ -102,26 +114,92 @@ public enum LoadoutStrategy {
         pool: [M],
         fighter: Combatant,
         opponent: Combatant,
-        typeChart: some TypeEffectivenessProviding
+        typeChart: some TypeEffectivenessProviding,
+        difficulty: Difficulty = .fair
     ) -> [M] {
-        handicap(picks, pool: pool, fighter: fighter, opponent: opponent, typeChart: typeChart)
+        guard difficulty == .easy else { return picks }
+        return handicap(picks, pool: pool, fighter: fighter, opponent: opponent, typeChart: typeChart)
     }
 }
 
 // MARK: - Private
 private extension LoadoutStrategy {
 
+    /// Moves best-first by score; each move is scored once. Ties keep
+    /// their original order.
     static func rankedByScore<M: MoveData>(
         _ moves: [M],
         fighter: Combatant,
         opponent: Combatant,
         typeChart: some TypeEffectivenessProviding
     ) -> [M] {
-        moves.sorted { lhs, rhs in
-            MoveScoring.score(move: lhs, fighter: fighter, opponent: opponent, typeChart: typeChart)
-            > MoveScoring.score(move: rhs, fighter: fighter, opponent: opponent, typeChart: typeChart)
-        }
+        scored(moves, fighter: fighter, opponent: opponent, typeChart: typeChart).map(\.move)
     }
+
+    static func scored<M: MoveData>(
+        _ moves: [M],
+        fighter: Combatant,
+        opponent: Combatant,
+        typeChart: some TypeEffectivenessProviding
+    ) -> [(move: M, score: Double)] {
+        moves.enumerated()
+            .map { (index: $0.offset, move: $0.element, score: MoveScoring.score(move: $0.element, fighter: fighter, opponent: opponent, typeChart: typeChart)) }
+            .sorted { $0.score != $1.score ? $0.score > $1.score : $0.index < $1.index }
+            .map { ($0.move, $0.score) }
+    }
+
+    /// Role-based completion behind `heuristicPick` and `fill`. Walks the
+    /// roles in order, skipping any the seed already covers: two attacks
+    /// of different types, then the best support move, then whichever is
+    /// better of a new-type attack and a different kind of support move.
+    /// Support moves only count if they score above
+    /// ``minimumSupportScore``.
+    static func complete<M: MoveData>(
+        seed: [M],
+        fighter: Combatant,
+        opponent: Combatant,
+        moves: [M],
+        typeChart: some TypeEffectivenessProviding,
+        count: Int
+    ) -> [M] {
+        let ranked = scored(moves, fighter: fighter, opponent: opponent, typeChart: typeChart)
+        var picks: [M] = []
+        for move in seed where !picks.contains(where: { $0.name == move.name }) { picks.append(move) }
+
+        func taken(_ move: M) -> Bool { picks.contains { $0.name == move.name } }
+        func newAttackType(_ move: M) -> Bool {
+            move.isDamage && !picks.contains { $0.isDamage && $0.typeName == move.typeName }
+        }
+        func supportKind(_ move: some MoveData) -> String { move.loadoutCategory }
+        let attacks = ranked.filter { $0.move.isDamage && $0.score > MoveScoring.Weights.disallowed }
+        let supports = ranked.filter { !$0.move.isDamage && $0.score > minimumSupportScore }
+
+        // Slots 1-2: attacks with different types.
+        while picks.count < count, picks.filter(\.isDamage).count < 2,
+              let next = attacks.first(where: { !taken($0.move) && newAttackType($0.move) }) {
+            picks.append(next.move)
+        }
+        // Slot 3: the best support move, if one is worth it.
+        if picks.count < count, !picks.contains(where: { !$0.isDamage }),
+           let support = supports.first(where: { !taken($0.move) }) {
+            picks.append(support.move)
+        }
+        // Remaining slots: the better of a new-type attack and a support
+        // move of a kind the loadout doesn't have yet.
+        while picks.count < count {
+            let kinds = Set(picks.filter { !$0.isDamage }.map(supportKind))
+            let attack = attacks.first { !taken($0.move) && newAttackType($0.move) }
+            let support = supports.first { !taken($0.move) && !kinds.contains(supportKind($0.move)) }
+            guard let next = [attack, support].compactMap({ $0 }).max(by: { $0.score < $1.score }) else { break }
+            picks.append(next.move)
+        }
+        // Anything still missing comes from the best leftovers.
+        return collapse([picks, ranked.map(\.move)], limit: count)
+    }
+
+    /// Support moves scoring at or below this (in HP-of-damage points)
+    /// aren't worth a loadout slot.
+    static var minimumSupportScore: Double { 8 }
 
     /// Walks each bucket in order, taking unseen moves until `limit`.
     /// Shared dedupe core for shortlist / heuristicPick / fill. Bucket order
@@ -152,7 +230,7 @@ private extension LoadoutStrategy {
             DamageCalculator.estimateDamage(move: move, attacker: fighter, defender: opponent, typeChart: typeChart)
         }
 
-        guard let weakest = damageMoves.min(by: { dmg($0.element) < dmg($1.element) }) else { return loadout }
+        guard let strongest = damageMoves.max(by: { dmg($0.element) < dmg($1.element) }) else { return loadout }
         let bestDmg = max(1, damageMoves.map { dmg($0.element) }.max() ?? 1)
         let threshold = Int(Double(bestDmg) * 0.55)
         let used = Set(loadout.map(\.name))
@@ -167,7 +245,7 @@ private extension LoadoutStrategy {
         guard let replacement = bottomHalf.randomElement() else { return loadout }
 
         var result = loadout
-        result[weakest.offset] = replacement
+        result[strongest.offset] = replacement
         return result
     }
 }

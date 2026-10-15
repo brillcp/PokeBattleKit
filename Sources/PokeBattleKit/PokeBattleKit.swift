@@ -12,7 +12,9 @@ import Synchronization
 public enum PokeBattleKit {
     private static let cache = DiskCache()
     private static let client = PokeAPIClient()
-    private static let movesFile = "moves.json"
+    /// Versioned so caches written before a `Move` format change are
+    /// ignored and refetched rather than failing to decode forever.
+    private static let movesFile = "moves_v3.json"
     private static let typeChartFile = "type_chart.json"
 
     /// Everything ``initialize()`` loads, plus the in-flight load so that

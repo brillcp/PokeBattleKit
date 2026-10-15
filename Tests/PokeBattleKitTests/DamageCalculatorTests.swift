@@ -1,7 +1,8 @@
 import Testing
 @testable import PokeBattleKit
 
-/// Pins down damage estimation (STAB, immunity, super-effective cap) and the
+/// Pins down the damage formula (level-50 stats, STAB, immunity, 4x
+/// weaknesses, crits, burn, multi-hit) and the
 /// move-selection helpers built on it (`guaranteedKO`, `strongestMove`).
 @Suite("Damage calculator")
 struct DamageCalculatorTests {
@@ -74,14 +75,85 @@ struct DamageCalculatorTests {
         #expect(dmg == 0)
     }
 
-    @Test("Super-effective cap lowers estimated damage")
-    func superEffectiveCapped() {
-        let attacker = Combatant(pokemon: Self.pokemon(types: ["electric"]), moves: [])
-        let defender = Combatant(pokemon: Self.pokemon(types: ["water"]), moves: [])
-        let m = Self.move(name: "thunderbolt", power: 90, damageClass: "special", typeName: "electric")
-        let capped = DamageCalculator.estimateDamage(move: m, attacker: attacker, defender: defender, typeChart: Self.chart, superEffectiveCap: 1.5)
-        let uncapped = DamageCalculator.estimateDamage(move: m, attacker: attacker, defender: defender, typeChart: Self.chart, superEffectiveCap: 4.0)
-        #expect(capped < uncapped)
+    @Test("Damage follows the level-50 formula")
+    func levelFiftyFormula() {
+        // Base 80 everywhere is 100 Attack and 100 Defense at level 50, so a
+        // 50-power STAB move does (22 * 50 * 100 / 100) / 50 + 2 = 24, x1.5.
+        let attacker = Combatant(pokemon: Self.pokemon(), moves: [])
+        let defender = Combatant(pokemon: Self.pokemon(), moves: [])
+        let tackle = Self.move(power: 50)
+        #expect(attacker.attack == 100)
+        #expect(DamageCalculator.estimateDamage(move: tackle, attacker: attacker, defender: defender, typeChart: Self.chart) == 36)
+        let hit = DamageCalculator.computeDamage(
+            power: 50, move: tackle, attacker: attacker, defender: defender, typeChart: Self.chart,
+            forceCritical: false, roll: 1.0
+        )
+        #expect(hit.damage == 36)
+    }
+
+    @Test("A double weakness takes four times the damage")
+    func doubleWeaknessIsUncapped() {
+        let chart = TypeChart(attackers: [
+            "fire": TypeMatchup(doubleDamageTo: ["grass", "bug"], halfDamageTo: [], noDamageTo: []),
+        ])
+        let attacker = Combatant(pokemon: Self.pokemon(), moves: [])
+        let neutral = Combatant(pokemon: Self.pokemon(types: ["normal"]), moves: [])
+        let grassBug = Combatant(pokemon: Self.pokemon(types: ["grass", "bug"]), moves: [])
+        let ember = Self.move(name: "ember", power: 40, damageClass: "special", typeName: "fire")
+        let onNeutral = DamageCalculator.computeDamage(power: 40, move: ember, attacker: attacker, defender: neutral, typeChart: chart, forceCritical: false, roll: 1)
+        let onWeak = DamageCalculator.computeDamage(power: 40, move: ember, attacker: attacker, defender: grassBug, typeChart: chart, forceCritical: false, roll: 1)
+        #expect(onWeak.effectiveness == 4)
+        // Truncation happens once at the end, so allow for the lost fraction.
+        #expect(abs(onWeak.damage - onNeutral.damage * 4) <= 3)
+    }
+
+    @Test("A critical hit ignores the attacker's drops and the defender's boosts")
+    func criticalIgnoresUnfavourableStages() {
+        var attacker = Combatant(pokemon: Self.pokemon(), moves: [])
+        var defender = Combatant(pokemon: Self.pokemon(), moves: [])
+        let tackle = Self.move(power: 50)
+        let clean = DamageCalculator.computeDamage(power: 50, move: tackle, attacker: attacker, defender: defender, typeChart: Self.chart, forceCritical: true, roll: 1)
+        attacker.applyStage("attack", delta: -2)
+        defender.applyStage("defense", delta: 2)
+        let staged = DamageCalculator.computeDamage(power: 50, move: tackle, attacker: attacker, defender: defender, typeChart: Self.chart, forceCritical: true, roll: 1)
+        #expect(staged.damage == clean.damage)
+        #expect(clean.damage == Int(Double(36) * DamageCalculator.criticalMultiplier))
+    }
+
+    @Test("Crit chance is 1/24, rising with the move's crit stage", arguments: zip([0, 1, 2, 3], [1.0 / 24, 1.0 / 8, 0.5, 1.0]))
+    func criticalChanceByStage(stage: Int, chance: Double) {
+        #expect(DamageCalculator.criticalChance(stage: stage) == chance)
+    }
+
+    @Test("A burned attacker's physical damage estimate is halved")
+    func burnHalvesPhysicalEstimate() {
+        var attacker = Combatant(pokemon: Self.pokemon(), moves: [])
+        let defender = Combatant(pokemon: Self.pokemon(), moves: [])
+        let physical = Self.move(power: 80)
+        let special = Self.move(name: "hyper-voice", power: 80, damageClass: "special")
+        let healthy = DamageCalculator.estimateDamage(move: physical, attacker: attacker, defender: defender, typeChart: Self.chart)
+        let healthySpecial = DamageCalculator.estimateDamage(move: special, attacker: attacker, defender: defender, typeChart: Self.chart)
+        attacker.status = .burn
+        #expect(DamageCalculator.estimateDamage(move: physical, attacker: attacker, defender: defender, typeChart: Self.chart) == healthy / 2)
+        #expect(DamageCalculator.estimateDamage(move: special, attacker: attacker, defender: defender, typeChart: Self.chart) == healthySpecial)
+    }
+
+    @Test("Multi-hit moves are estimated at their expected hit count")
+    func multiHitEstimate() {
+        let attacker = Combatant(pokemon: Self.pokemon(), moves: [])
+        let defender = Combatant(pokemon: Self.pokemon(), moves: [])
+        let single = Self.move(name: "bullet", power: 25)
+        let base = MoveSnapshot(from: single)
+        let twoToFive = MoveSnapshot(
+            name: "bullet-seed", displayName: "Bullet Seed", power: 25, accuracy: 100, priority: 0,
+            damageClass: "physical", typeName: "normal", ailment: "none", ailmentChance: 0, drain: 0,
+            healing: 0, effectChance: nil, statChangeNames: [], statChangeDeltas: [],
+            isRechargeMove: false, hasSelfDebuff: false, minHits: 2, maxHits: 5
+        )
+        let perHit = DamageCalculator.estimateDamage(move: base, attacker: attacker, defender: defender, typeChart: Self.chart)
+        let total = DamageCalculator.estimateDamage(move: twoToFive, attacker: attacker, defender: defender, typeChart: Self.chart)
+        #expect(twoToFive.expectedHits == 3.1)
+        #expect(abs(total - Int(Double(perHit) * 3.1)) <= 3)
     }
 
     @Test("Guaranteed KO finds a move that knocks out the defender")

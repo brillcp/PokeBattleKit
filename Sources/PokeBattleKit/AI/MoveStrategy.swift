@@ -1,12 +1,11 @@
-/// Deterministic AI for in-battle move selection. Owns the heuristic
-/// fallback used when the host app's LLM picker is unavailable and the
-/// post-pick correction pipeline applied to every chosen move regardless of
-/// source.
+/// AI for in-battle move selection: the heuristic pick and the post-pick
+/// correction pipeline, applied to every chosen move whatever picked it
+/// (this heuristic, a player's assistant, or anything else).
 ///
 /// The intended flow each turn:
 ///
 /// ```swift
-/// guard let pick = llmPick ?? MoveStrategy.heuristicPick(
+/// guard let pick = MoveStrategy.heuristicPick(
 ///     attacker: ai, defender: player, moves: ai.moves,
 ///     typeChart: chart, recentMoves: aiHistory) else { return }
 /// let final = MoveStrategy.adjust(
@@ -14,50 +13,100 @@
 ///     moves: ai.moves, typeChart: chart, fallback: safeMove)
 /// ```
 ///
-/// Given the same inputs, both functions always return the same move.
+/// ``adjust(pick:attacker:defender:moves:typeChart:fallback:)`` is
+/// deterministic. ``heuristicPick(attacker:defender:moves:typeChart:recentMoves:difficulty:)``
+/// is too on ``Difficulty/hard``; on the other difficulties it picks at
+/// random among the near-best moves.
 public enum MoveStrategy {
 
-    /// Highest-scoring move by
-    /// ``MoveScoring/inBattleScore(move:attacker:defender:typeChart:recentMoves:)``,
-    /// accounting for damage, recency, and low-HP bias. Ties go to the
-    /// earliest move in `moves`. Returns `nil` only if `moves` is empty.
+    /// Move choice by
+    /// ``MoveScoring/inBattleScore(move:attacker:defender:typeChart:recentMoves:)``
+    /// at the given difficulty. Returns `nil` only if `moves` is empty.
+    ///
+    /// - ``Difficulty/hard``: the highest score; ties go to the earliest move.
+    /// - ``Difficulty/fair``: a random move among those scoring within 10%
+    ///   (and at least 3 points) of the best, weighted by score, so the AI
+    ///   varies its play between near-equal options but never throws.
+    /// - ``Difficulty/easy``: a uniformly random move among those within 35%
+    ///   of the best, so it often settles for a decent move.
     public static func heuristicPick<M: MoveData>(
         attacker: Combatant,
         defender: Combatant,
         moves: [M],
         typeChart: some TypeEffectivenessProviding,
-        recentMoves: [String]
+        recentMoves: [String],
+        difficulty: Difficulty = .fair
     ) -> M? {
-        moves.max { lhs, rhs in
-            MoveScoring.inBattleScore(move: lhs, attacker: attacker, defender: defender, typeChart: typeChart, recentMoves: recentMoves)
-            < MoveScoring.inBattleScore(move: rhs, attacker: attacker, defender: defender, typeChart: typeChart, recentMoves: recentMoves)
-        }
+        var generator = SystemRandomNumberGenerator()
+        return heuristicPick(
+            attacker: attacker, defender: defender, moves: moves, typeChart: typeChart,
+            recentMoves: recentMoves, difficulty: difficulty, using: &generator
+        )
     }
 
-    /// Post-pick correction pipeline. Order: immune repair -> wasted boost
-    /// / re-status override -> guaranteed-KO upgrade -> redundant-status
-    /// downgrade. Each step is a no-op when its precondition isn't met.
+    /// ``heuristicPick(attacker:defender:moves:typeChart:recentMoves:difficulty:)``
+    /// with an explicit random number generator, for reproducible tests.
+    public static func heuristicPick<M: MoveData>(
+        attacker: Combatant,
+        defender: Combatant,
+        moves: [M],
+        typeChart: some TypeEffectivenessProviding,
+        recentMoves: [String],
+        difficulty: Difficulty,
+        using generator: inout some RandomNumberGenerator
+    ) -> M? {
+        let scored = moves.map { move in
+            (move, MoveScoring.inBattleScore(
+                move: move, attacker: attacker, defender: defender,
+                typeChart: typeChart, recentMoves: recentMoves
+            ))
+        }
+        guard let best = scored.max(by: { $0.1 < $1.1 }) else { return nil }
+
+        let window: Double
+        switch difficulty {
+        case .hard: return best.0
+        case .fair: window = 0.10
+        case .easy: window = 0.35
+        }
+        let floor = best.1 - max(abs(best.1) * window, 3)
+        let candidates = scored.filter { $0.1 >= floor }
+        guard candidates.count > 1 else { return best.0 }
+
+        // Fair weights by score above the cut-off; easy picks uniformly.
+        let weights = candidates.map { difficulty == .easy ? 1 : $0.1 - floor + 1 }
+        var roll = Double.random(in: 0..<weights.reduce(0, +), using: &generator)
+        for (candidate, weight) in zip(candidates, weights) {
+            if roll < weight { return candidate.0 }
+            roll -= weight
+        }
+        return best.0
+    }
+
+    /// Post-pick correction pipeline. Order: unusable repair -> useless
+    /// support override -> guaranteed-KO upgrade. Each step is a no-op when
+    /// its precondition isn't met.
     ///
-    /// The pipeline exists so an LLM pick (or a heuristic pick in an edge
-    /// case) can't make an obviously bad play:
-    /// 1. **Immune repair:** if the target is immune to the pick's type,
-    ///    use `fallback`. This checks the type regardless of damage class,
-    ///    so a Normal-type status move is also replaced against a Ghost.
-    /// 2. **Wasted boost / re-status:** a non-damaging boost while any stat
-    ///    is already at +2, or any move carrying an ailment while the target
-    ///    already has a status, is swapped for the damaging move with the
-    ///    highest power x type multiplier.
+    /// The pipeline exists so no pick (an external one, or a heuristic pick
+    /// in an edge case) can make an obviously bad play:
+    /// 1. **Unusable repair:** if the pick can't work at all (see
+    ///    ``MoveScoring/isUsable(_:attacker:defender:typeChart:)``: a type
+    ///    immunity, Thunder Wave into Ground, Fake Out after turn one), use
+    ///    `fallback`, or the strongest attack if `fallback` can't work
+    ///    either. Moves that only affect the user, like Swords Dance or
+    ///    Recover, are never "immune".
+    /// 2. **Useless support:** a non-damaging pick that would achieve
+    ///    nothing (score of 0 or less: a heal at full HP, a status on an
+    ///    already-statused target, a boost at +6) becomes the strongest
+    ///    attack.
     /// 3. **KO upgrade:** if the pick wouldn't KO but another move would
     ///    (per ``DamageCalculator/guaranteedKO(attacker:defender:moves:typeChart:accuracyFloor:)``),
     ///    take the KO.
-    /// 4. **Redundant status:** a pure status-inflicting move against an
-    ///    already-statused target becomes the strongest damaging
-    ///    alternative. Usually step 2 has handled this already; this is a
-    ///    safety net for when it couldn't.
     ///
-    /// - Parameter fallback: Move to use when the target is immune to the
-    ///   pick. It isn't checked itself, so pass one the target can be hit
-    ///   by.
+    /// "Strongest attack" means the highest expected damage, so it accounts
+    /// for stats, STAB, stat stages, type and accuracy.
+    ///
+    /// - Parameter fallback: Move to use when the pick can't work.
     public static func adjust<M: MoveData>(
         pick: M,
         attacker: Combatant,
@@ -67,39 +116,54 @@ public enum MoveStrategy {
         fallback: M
     ) -> M {
         var current = pick
-        current = immuneRepair(pick: current, defender: defender, typeChart: typeChart, fallback: fallback)
-        current = phaseAdjust(pick: current, attacker: attacker, defender: defender, moves: moves, typeChart: typeChart)
+        current = unusableRepair(pick: current, attacker: attacker, defender: defender, moves: moves, typeChart: typeChart, fallback: fallback)
+        current = uselessSupportOverride(pick: current, attacker: attacker, defender: defender, moves: moves, typeChart: typeChart)
         current = koOverride(pick: current, attacker: attacker, defender: defender, moves: moves, typeChart: typeChart)
-        current = statusRedundancyOverride(pick: current, attacker: attacker, defender: defender, moves: moves, typeChart: typeChart)
         return current
+    }
+
+    /// The move with the highest expected damage (estimate x average roll
+    /// x accuracy), or `nil` if nothing in `moves` can deal damage.
+    public static func strongestAttack<M: MoveData>(
+        attacker: Combatant,
+        defender: Combatant,
+        moves: [M],
+        typeChart: some TypeEffectivenessProviding
+    ) -> M? {
+        moves
+            .map { ($0, MoveScoring.expectedDamage($0, attacker: attacker, defender: defender, typeChart: typeChart)) }
+            .filter { $0.1 > 0 }
+            .max { $0.1 < $1.1 }?.0
     }
 }
 
 // MARK: - Private
 private extension MoveStrategy {
 
-    static func immuneRepair<M: MoveData>(
+    static func unusableRepair<M: MoveData>(
         pick: M,
+        attacker: Combatant,
         defender: Combatant,
+        moves: [M],
         typeChart: some TypeEffectivenessProviding,
         fallback: M
     ) -> M {
-        let eff = typeChart.multiplier(attacking: pick.typeName, defenders: defender.typeNames)
-        return (eff == 0 && fallback.name != pick.name) ? fallback : pick
+        guard !MoveScoring.isUsable(pick, attacker: attacker, defender: defender, typeChart: typeChart) else { return pick }
+        if MoveScoring.isUsable(fallback, attacker: attacker, defender: defender, typeChart: typeChart) { return fallback }
+        return strongestAttack(attacker: attacker, defender: defender, moves: moves, typeChart: typeChart) ?? pick
     }
 
-    static func phaseAdjust<M: MoveData>(
+    static func uselessSupportOverride<M: MoveData>(
         pick: M,
         attacker: Combatant,
         defender: Combatant,
         moves: [M],
         typeChart: some TypeEffectivenessProviding
     ) -> M {
-        let alreadyBoosted = attacker.statStages.values.contains { $0 >= 2 }
-        let wastedBoost = (pick.power ?? 0) == 0 && pick.statChangeDeltas.contains { $0 > 0 } && alreadyBoosted
-        let wastedStatus = pick.ailment != "none" && defender.status != .none
-        guard wastedBoost || wastedStatus else { return pick }
-        return fallbackDamageMove(from: moves, defender: defender, typeChart: typeChart) ?? pick
+        guard !pick.isDamage,
+              MoveScoring.score(move: pick, fighter: attacker, opponent: defender, typeChart: typeChart) <= 0
+        else { return pick }
+        return strongestAttack(attacker: attacker, defender: defender, moves: moves, typeChart: typeChart) ?? pick
     }
 
     static func koOverride<M: MoveData>(
@@ -111,39 +175,15 @@ private extension MoveStrategy {
     ) -> M {
         let pickDamage = DamageCalculator.estimateDamage(move: pick, attacker: attacker, defender: defender, typeChart: typeChart)
         guard pickDamage < defender.currentHP else { return pick }
+        // Never trade a priority pick for a slower KO: the priority move may
+        // be the only way to act before the defender does.
+        let usable = moves.filter {
+            $0.priority >= pick.priority
+                && MoveScoring.isUsable($0, attacker: attacker, defender: defender, typeChart: typeChart)
+        }
         guard let killer = DamageCalculator.guaranteedKO(
-            attacker: attacker, defender: defender, moves: moves, typeChart: typeChart
+            attacker: attacker, defender: defender, moves: usable, typeChart: typeChart
         ), killer.name != pick.name else { return pick }
         return killer
-    }
-
-    static func statusRedundancyOverride<M: MoveData>(
-        pick: M,
-        attacker: Combatant,
-        defender: Combatant,
-        moves: [M],
-        typeChart: some TypeEffectivenessProviding
-    ) -> M {
-        guard pick.ailment != "none", (pick.power ?? 0) == 0, defender.status != .none else { return pick }
-        let alternatives = moves.filter { $0.name != pick.name }
-        return DamageCalculator.strongestMove(
-            attacker: attacker, defender: defender, moves: alternatives, typeChart: typeChart
-        )?.move ?? pick
-    }
-
-    /// Cheap "hit them with something" choice: ranks damaging moves by base
-    /// power x type multiplier only, ignoring stats, stages and STAB.
-    static func fallbackDamageMove<M: MoveData>(
-        from moves: [M],
-        defender: Combatant,
-        typeChart: some TypeEffectivenessProviding
-    ) -> M? {
-        moves.compactMap { move -> (M, Double)? in
-            guard let power = move.power, power > 0 else { return nil }
-            let eff = typeChart.multiplier(attacking: move.typeName, defenders: defender.typeNames)
-            guard eff > 0 else { return nil }
-            return (move, Double(power) * eff)
-        }
-        .max { $0.1 < $1.1 }?.0
     }
 }

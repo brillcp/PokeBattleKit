@@ -19,8 +19,8 @@ public enum Event: Sendable, Codable {
     /// when the move then fails.
     case used(Side, moveName: String)
     case missed(Side)
-    /// HP lost by `side`. `effectiveness` is the raw, uncapped type
-    /// multiplier (use it for "super effective" messages). An `amount` and
+    /// HP lost by `side`. `effectiveness` is the type multiplier (use
+    /// it for "super effective" messages). An `amount` and
     /// `effectiveness` of 0 means the move had no effect.
     case damaged(Side, amount: Int, effectiveness: Double, crit: Bool)
     case statusApplied(Side, Status)
@@ -36,9 +36,24 @@ public enum Event: Sendable, Codable {
     case recharging(Side)
     case wokeUp(Side)
     case fastAsleep(Side)
+    /// `side` is frozen and can't move this turn.
+    case frozenSolid(Side)
+    /// `side` thawed out (by chance at the start of its turn, or when hit
+    /// by a Fire-type move).
+    case thawed(Side)
     case fullyParalyzed(Side)
     /// Focus Punch failed because its user was hit first.
     case lostFocus(Side)
+    /// `side` flinched and lost its action. Not preceded by a
+    /// ``used(_:moveName:)``, because the move is never used.
+    case flinched(Side)
+    /// `side`'s move failed: Fake Out after the first turn, or Dream Eater
+    /// against a target that isn't asleep.
+    case failed(Side)
+    /// A multi-hit move hit `side` `count` times. Follows that move's single
+    /// ``damaged(_:amount:effectiveness:crit:)`` event, which carries the
+    /// total damage of all hits.
+    case hitCount(Side, count: Int)
     /// Emitted right before ``ended(winner:)``.
     case fainted(Side)
     /// The battle is over; always the last event. The engine always reports
@@ -48,7 +63,7 @@ public enum Event: Sendable, Codable {
     // MARK: - Codable
 
     private enum CodingKeys: String, CodingKey {
-        case type, side, moveName, amount, effectiveness, crit, status, stat, delta, winner
+        case type, side, moveName, amount, effectiveness, crit, status, stat, delta, winner, count
     }
 
     public init(from decoder: Decoder) throws {
@@ -90,10 +105,20 @@ public enum Event: Sendable, Codable {
             self = .wokeUp(try c.decode(Side.self, forKey: .side))
         case "fastAsleep":
             self = .fastAsleep(try c.decode(Side.self, forKey: .side))
+        case "frozenSolid":
+            self = .frozenSolid(try c.decode(Side.self, forKey: .side))
+        case "thawed":
+            self = .thawed(try c.decode(Side.self, forKey: .side))
         case "fullyParalyzed":
             self = .fullyParalyzed(try c.decode(Side.self, forKey: .side))
         case "lostFocus":
             self = .lostFocus(try c.decode(Side.self, forKey: .side))
+        case "flinched":
+            self = .flinched(try c.decode(Side.self, forKey: .side))
+        case "failed":
+            self = .failed(try c.decode(Side.self, forKey: .side))
+        case "hitCount":
+            self = .hitCount(try c.decode(Side.self, forKey: .side), count: try c.decode(Int.self, forKey: .count))
         case "fainted":
             self = .fainted(try c.decode(Side.self, forKey: .side))
         case "ended":
@@ -150,12 +175,28 @@ public enum Event: Sendable, Codable {
         case .fastAsleep(let side):
             try c.encode("fastAsleep", forKey: .type)
             try c.encode(side, forKey: .side)
+        case .frozenSolid(let side):
+            try c.encode("frozenSolid", forKey: .type)
+            try c.encode(side, forKey: .side)
+        case .thawed(let side):
+            try c.encode("thawed", forKey: .type)
+            try c.encode(side, forKey: .side)
         case .fullyParalyzed(let side):
             try c.encode("fullyParalyzed", forKey: .type)
             try c.encode(side, forKey: .side)
         case .lostFocus(let side):
             try c.encode("lostFocus", forKey: .type)
             try c.encode(side, forKey: .side)
+        case .flinched(let side):
+            try c.encode("flinched", forKey: .type)
+            try c.encode(side, forKey: .side)
+        case .failed(let side):
+            try c.encode("failed", forKey: .type)
+            try c.encode(side, forKey: .side)
+        case .hitCount(let side, let count):
+            try c.encode("hitCount", forKey: .type)
+            try c.encode(side, forKey: .side)
+            try c.encode(count, forKey: .count)
         case .fainted(let side):
             try c.encode("fainted", forKey: .type)
             try c.encode(side, forKey: .side)

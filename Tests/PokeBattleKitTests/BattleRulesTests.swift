@@ -31,7 +31,8 @@ struct BattleRulesTests {
 
     // MARK: Speed stages
 
-    @Test("Speed stat stages scale effective speed", arguments: zip([0, 2, -1, 6], [80, 160, 53, 320]))
+    // Base 80 Speed is 100 at level 50.
+    @Test("Speed stat stages scale effective speed", arguments: zip([0, 2, -1, 6], [100, 200, 66, 400]))
     func speedStageScalesEffectiveSpeed(stage: Int, expected: Int) {
         var fighter = Self.combatant("Fighter", speed: 80)
         fighter.applyStage("speed", delta: stage)
@@ -43,7 +44,7 @@ struct BattleRulesTests {
         var fighter = Self.combatant("Fighter", speed: 80)
         fighter.applyStage("speed", delta: 2)
         fighter.status = .paralysis
-        #expect(fighter.effectiveSpeed == 80)
+        #expect(fighter.effectiveSpeed == 100)
     }
 
     @Test("A speed boost lets the slower Pokémon move first")
@@ -74,7 +75,7 @@ struct BattleRulesTests {
         #expect(engine.state.player.status == .none)
     }
 
-    @Test("Rest puts the user to sleep for two turns")
+    @Test("Rest heals the real level-50 HP and puts the user to sleep for two turns")
     func restSleepsTwoTurns() {
         var player = Self.combatant("Player", speed: 100)
         player.currentHP = 50
@@ -82,7 +83,7 @@ struct BattleRulesTests {
         let rest = EngineTests.move(name: "rest", power: nil, damageClass: "status", typeName: "psychic")
 
         _ = engine.resolveRound(playerMove: rest, opponentMove: Self.splash)
-        #expect(engine.state.player.currentHP == engine.state.player.maxHP)
+        #expect(engine.state.player.currentHP == 50 + player.baseMaxHP)
         #expect(engine.state.player.status == .sleep)
 
         for _ in 0..<2 {

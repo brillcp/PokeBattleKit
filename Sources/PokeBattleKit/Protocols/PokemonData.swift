@@ -15,4 +15,12 @@ public protocol PokemonData {
     /// "special-attack", "special-defense", "speed"). Missing stats default
     /// to 50.
     var statLookup: [String: Int] { get }
+    /// Weight in hectograms (PokeAPI's unit), for weight-based moves like
+    /// Low Kick and Heavy Slam. Defaults to `nil` (unknown), in which case
+    /// those moves use a middling power.
+    var weightInHectograms: Int? { get }
+}
+
+public extension PokemonData {
+    var weightInHectograms: Int? { nil }
 }

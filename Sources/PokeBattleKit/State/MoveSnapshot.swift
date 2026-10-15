@@ -24,6 +24,11 @@ public struct MoveSnapshot: MoveData, Codable, Hashable, Sendable {
     public let statChangeDeltas: [Int]
     public let isRechargeMove: Bool
     public let hasSelfDebuff: Bool
+    public let statChangeTarget: StatChangeTarget?
+    public let minHits: Int?
+    public let maxHits: Int?
+    public let critRate: Int
+    public let flinchChance: Int
 
     public init(
         name: String,
@@ -41,7 +46,12 @@ public struct MoveSnapshot: MoveData, Codable, Hashable, Sendable {
         statChangeNames: [String],
         statChangeDeltas: [Int],
         isRechargeMove: Bool,
-        hasSelfDebuff: Bool
+        hasSelfDebuff: Bool,
+        statChangeTarget: StatChangeTarget? = nil,
+        minHits: Int? = nil,
+        maxHits: Int? = nil,
+        critRate: Int = 0,
+        flinchChance: Int = 0
     ) {
         self.name = name
         self.displayName = displayName
@@ -59,6 +69,11 @@ public struct MoveSnapshot: MoveData, Codable, Hashable, Sendable {
         self.statChangeDeltas = statChangeDeltas
         self.isRechargeMove = isRechargeMove
         self.hasSelfDebuff = hasSelfDebuff
+        self.statChangeTarget = statChangeTarget
+        self.minHits = minHits
+        self.maxHits = maxHits
+        self.critRate = critRate
+        self.flinchChance = flinchChance
     }
 
     /// Build a snapshot from any `MoveData` conformer.
@@ -79,5 +94,10 @@ public struct MoveSnapshot: MoveData, Codable, Hashable, Sendable {
         self.statChangeDeltas = source.statChangeDeltas
         self.isRechargeMove = source.isRechargeMove
         self.hasSelfDebuff = source.hasSelfDebuff
+        self.statChangeTarget = source.statChangeTarget
+        self.minHits = source.minHits
+        self.maxHits = source.maxHits
+        self.critRate = source.critRate
+        self.flinchChance = source.flinchChance
     }
 }

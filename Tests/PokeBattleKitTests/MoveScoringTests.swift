@@ -14,7 +14,7 @@ struct MoveScoringTests {
     static func pokemon(
         types: [String] = ["normal"],
         hp: Int = 100,
-        currentHP: Int? = nil,
+        hpFraction: Double? = nil,
         attack: Int = 80,
         specialAttack: Int = 80,
         speed: Int = 80
@@ -27,7 +27,7 @@ struct MoveScoringTests {
             id: 1, name: "test", frontSprite: "", backSprite: nil,
             typeNames: types, statLookup: stats
         ), moves: [])
-        if let current = currentHP { c.currentHP = current }
+        if let hpFraction { c.currentHP = Int(Double(c.maxHP) * hpFraction) }
         return c
     }
 
@@ -61,7 +61,7 @@ struct MoveScoringTests {
 
     @Test("At low HP, damaging move scores higher than a stat-boost")
     func lowHP_damageBeatsBoost() {
-        let attacker = Self.pokemon(hp: 100, currentHP: 25)  // 25% HP
+        let attacker = Self.pokemon(hp: 100, hpFraction: 0.05)  // in KO range
         let defender = Self.pokemon()
         let damage = Self.damageMove()
         let boost  = Self.boostMove()
@@ -79,7 +79,7 @@ struct MoveScoringTests {
 
     @Test("At low HP, priority move scores higher than normal-speed move")
     func lowHP_priorityBonus() {
-        let attacker = Self.pokemon(hp: 100, currentHP: 20)  // 20% HP
+        let attacker = Self.pokemon(hp: 100, hpFraction: 0.05)  // in KO range
         let defender = Self.pokemon()
         let normal   = Self.damageMove(name: "tackle", priority: 0)
         let priority = Self.damageMove(name: "quick-attack", priority: 1)
@@ -97,7 +97,7 @@ struct MoveScoringTests {
 
     @Test("At full HP, stat-boost can outscore a weak damage move")
     func fullHP_boostCanWin() {
-        let attacker = Self.pokemon(hp: 100, currentHP: 100)
+        let attacker = Self.pokemon(hp: 100)
         let defender = Self.pokemon()
         let damage = Self.damageMove(power: 20)  // low power → STAB score still < boost
         let boost  = Self.boostMove()
