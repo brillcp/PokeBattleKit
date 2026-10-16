@@ -21,6 +21,7 @@ Used in [PokedexUI](https://github.com/brillcp/pokedexui). Written by [Viktor Gi
   - `LoadoutStrategy`: role-based 4-move loadouts (two attack types, then status/boost/heal or coverage), shortlisting, filling, and an easy-mode handicap
   - `MatchmakingStrategy` + `Candidate`: fair matchups by simulated strength (`PokemonStrength`) and type matchup, and a weighted random pick favouring tense matchups. Fairness is symmetric, so it picks an opponent for a player or a player for an opponent
 - **Strength ratings** (`PokemonStrength`): an Elo-style rating for every Pokémon from simulated battles under these rules (shipped as `strength-ratings.json`), with a BST-based estimate for anything unrated
+- **Battles between two devices**: `PeerBattle` runs the host-authoritative turn protocol (commit, resolve, replay, with stale messages ignored) over any transport, `BattleMessage` is the wire format, and `Event.mirrored` flips a round's events to the other device's side (see [Battles between two devices](#battles-between-two-devices))
 - **Battle simulator** (`BattleSimulator`): headless AI-vs-AI battles, used by the tests and the rating generator
 - **PokeAPI networking + disk cache**: fetches and caches all moves (~937) and type data on first launch, reads from disk on subsequent launches
 - **Protocol-driven**: `MoveData`, `PokemonData`, and `TypeEffectivenessProviding` let consumers use their own model types
@@ -65,6 +66,29 @@ let events = engine.resolveRound(playerMove: thunderbolt, opponentMove: flamethr
 for event in events {
     // .used, .damaged, .hitCount, .flinched, .statusApplied, .fainted, .ended, etc.
 }
+```
+
+### Battles between two devices
+
+`PeerBattle` is one device's half of a two-device battle, with no networking of its own: the host runs the engine, and both devices play the host's resolved rounds, so rolls can't diverge. Each device sees the battle from its own side. Feed it this device's moves and the peer's messages, and carry out the steps it returns; `BattleMessage<Fighter>` is the whole wire format (greeting, challenge exchange, turns), generic over your app's fighter summary, to send over any transport:
+
+```swift
+var battle = PeerBattle(role: .host, state: state, typeChart: chart, peerMoves: theirMoves)
+
+func perform(_ steps: [PeerBattle.Step]) async {
+    for step in steps {
+        switch step {
+        case .send(let turn): transport.send(BattleMessage<MyFighter>.turn(turn))
+        case .play(let events): await animate(events)   // already from this device's side
+        case .peerCommitted: showPrompt("Choose your move")
+        case .ended(let winner): showResult(winner)
+        }
+    }
+}
+
+await perform(battle.commit(myMove))
+// When a message arrives:
+if case .turn(let turn) = message { await perform(battle.receive(turn)) }
 ```
 
 ### AI strategies
@@ -192,6 +216,7 @@ PokeBattleKit/
   Engine/                 BattleEngine, DamageCalculator, StatStage
   Models/                 Move (Codable model from PokeAPI)
   MoveClassification/     DamageClass, recharge/self-debuff/charging/unsupported move sets
+  Multiplayer/            PeerBattle (two-device turn protocol), BattleMessage, TurnMessage, ChallengePayload
   Networking/             PokeAPIClient + PokeAPI response models (internal)
   Cache/                  DiskCache (internal, JSON file persistence)
   Protocols/              MoveData, PokemonData, TypeEffectivenessProviding
