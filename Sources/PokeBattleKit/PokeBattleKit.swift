@@ -31,13 +31,20 @@ public enum PokeBattleKit {
     /// Whether ``initialize()`` has completed successfully.
     public static var isInitialized: Bool { state.withLock(\.isLoaded) }
 
-    /// The type effectiveness chart. Traps if not initialized.
+    /// The type effectiveness chart. Traps if not initialized; use
+    /// ``loadedTypeChart`` where ``initialize()`` may not have finished.
     public static var typeChart: TypeChart {
         guard let chart = state.withLock(\.typeChart) else {
             preconditionFailure("PokeBattleKit.initialize() must be called before accessing typeChart")
         }
         return chart
     }
+
+    /// The type effectiveness chart, or `nil` until ``initialize()`` has
+    /// completed successfully. A non-trapping alternative to
+    /// ``typeChart`` for code that can run before the catalogue is loaded
+    /// (e.g. a view that degrades gracefully without type data).
+    public static var loadedTypeChart: TypeChart? { state.withLock(\.typeChart) }
 
     /// All loaded moves, in no particular order. Empty until initialized.
     public static var allMoves: [Move] { state.withLock { Array($0.moves.values) } }
@@ -66,7 +73,12 @@ public enum PokeBattleKit {
         do {
             try await load.value
         } catch {
-            state.withLock { $0.loading = nil }
+            // Only clear our own failed load: by the time this waiter
+            // resumes, an earlier waiter may already have cleared it and a
+            // new caller started a fresh attempt that mustn't be dropped.
+            state.withLock { state in
+                if state.loading == load { state.loading = nil }
+            }
             throw error
         }
     }

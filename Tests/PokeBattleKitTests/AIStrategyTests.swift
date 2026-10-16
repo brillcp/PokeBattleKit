@@ -18,18 +18,6 @@ struct AIStrategyTests {
 
     static func move(_ name: String) -> MoveSnapshot { Fixtures.moves[name]! }
 
-    /// Deterministic generator (SplitMix64) for reproducible picks.
-    struct SeededGenerator: RandomNumberGenerator {
-        var state: UInt64
-        mutating func next() -> UInt64 {
-            state &+= 0x9E37_79B9_7F4A_7C15
-            var z = state
-            z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
-            z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
-            return z ^ (z >> 31)
-        }
-    }
-
     // MARK: Scoring
 
     @Test("Healing is worth nothing at full HP and something when hurt")
@@ -207,7 +195,7 @@ struct AIStrategyTests {
         let pushover = Candidate(id: 763, name: "tsareena", typeNames: ["grass"], baseStatTotal: 510, isLegendary: false, isMythical: false)
         let even = Candidate(id: 131, name: "lapras", typeNames: ["water", "ice"], baseStatTotal: 535, isLegendary: false, isMythical: false)
         var generator = SeededGenerator(state: 1)
-        let fair = OpponentStrategy.fairPool(for: player, from: [pushover, even], typeChart: Self.chart, using: &generator)
+        let fair = MatchmakingStrategy.fairPool(for: player, from: [pushover, even], typeChart: Self.chart, using: &generator)
         #expect(!fair.contains { $0.name == "tsareena" })
     }
 
@@ -218,9 +206,9 @@ struct AIStrategyTests {
         var generator = SeededGenerator(state: 2)
         var picks: [Int] = []
         for _ in 0..<20 {
-            let pick = OpponentStrategy.pick(for: player, from: candidates, typeChart: Self.chart, excluding: Set(picks.suffix(5)), using: &generator)!
+            let pick = MatchmakingStrategy.pick(for: player, from: candidates, typeChart: Self.chart, excluding: Set(picks.suffix(5)), using: &generator)!
             #expect(!picks.suffix(5).contains(pick.id))
-            #expect(OpponentStrategy.fairWinChance.contains(OpponentStrategy.predictedWinChance(of: player, against: pick)))
+            #expect(MatchmakingStrategy.fairWinChance.contains(MatchmakingStrategy.predictedWinChance(of: player, against: pick)))
             picks.append(pick.id)
         }
         #expect(Set(picks).count >= 15)

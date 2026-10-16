@@ -1,5 +1,5 @@
 /// Sendable DTO carrying the fields the AI needs to evaluate a potential
-/// battle candidate. Pure data; heuristics live in ``OpponentStrategy``.
+/// battle candidate. Pure data; heuristics live in ``MatchmakingStrategy``.
 public struct Candidate: Sendable {
     public let id: Int
     /// PokeAPI name, used to look up its ``strength``.
@@ -33,32 +33,41 @@ public struct Candidate: Sendable {
     }
 }
 
-/// Opponent selection: fair matchups by simulated battle strength.
+/// Matchmaking: fair matchups between two candidates by simulated battle
+/// strength.
 ///
-/// A candidate is a fair opponent when:
-/// - **Strength:** the player's predicted win chance against it (from
-///   ``PokemonStrength`` ratings) is within ``fairWinChance``, so neither
-///   side is expected to win easily, and
+/// The rules are symmetric, so the same calls find an opponent for the
+/// player's fighter or a fighter for the player against a given opponent:
+/// pass whichever side is already chosen as the first argument (named
+/// `player` for source compatibility) and the other side's options as
+/// `candidates`. Two candidates are a fair match when:
+/// - **Strength:** either one's predicted win chance against the other
+///   (from ``PokemonStrength`` ratings) is within ``fairWinChance``, so
+///   neither side is expected to win easily, and
 /// - **Types:** neither side's types hit the other super-effectively while
 ///   being resisted back (a one-sided matchup), and neither is immune to
 ///   all of the other's types.
 ///
-/// Difficulty doesn't change who's fair; it changes the opponent's level
+/// Difficulty doesn't change who's fair; it changes the AI opponent's level
 /// and play (see ``Difficulty``). ``pick(for:from:typeChart:excluding:using:)``
-/// then chooses among the fair opponents at random, favouring the tensest
+/// then chooses among the fair matches at random, favouring the tensest
 /// matchups, so repeated picks vary.
-public enum OpponentStrategy {
+public enum MatchmakingStrategy {
 
-    /// The player's predicted win chance a fair matchup falls in.
+    /// The range a fair matchup's predicted win chance falls in. It's
+    /// centred on 50%, so it holds from either side's point of view.
     public static let fairWinChance: ClosedRange<Double> = 0.35...0.65
 
-    /// The player's predicted chance to beat `candidate` at equal level.
+    /// The predicted chance that `player` (the first candidate, whichever
+    /// side it's on) beats `candidate` at equal level. The chance the other
+    /// way round is one minus this.
     public static func predictedWinChance(of player: Candidate, against candidate: Candidate) -> Double {
         PokemonStrength.winChance(rating: player.strength, against: candidate.strength)
     }
 
-    /// Every fair opponent for `player` among `candidates`, in random
-    /// order. When none qualify (an outlier Pokémon), the closest matches
+    /// Every fair match for `player` (the side already chosen) among
+    /// `candidates`, other than `player` itself, in random order. When
+    /// none qualify (an outlier Pokémon), the closest matches
     /// by predicted win chance that pass the type check are returned
     /// instead, and failing that the closest matches at all.
     public static func fairPool(
@@ -89,9 +98,10 @@ public enum OpponentStrategy {
         return fairPool(for: player, from: candidates, typeChart: typeChart, using: &generator)
     }
 
-    /// An opponent for `player`: a random fair opponent, weighted towards
-    /// tense matchups (a predicted win chance near 50%, and both sides
-    /// able to hit the other super-effectively). Candidates in `recent`
+    /// A match for `player` (the side already chosen) from `candidates`: a
+    /// random fair match, weighted towards tense matchups (a predicted win
+    /// chance near 50%, and both sides able to hit the other
+    /// super-effectively). Candidates in `recent`
     /// are skipped while others remain, so repeated picks vary. `nil` only
     /// if there are no other candidates.
     public static func pick(
@@ -129,7 +139,7 @@ public enum OpponentStrategy {
 }
 
 // MARK: - Private
-private extension OpponentStrategy {
+private extension MatchmakingStrategy {
 
     /// Rejects one-sided type matchups: a side whose best same-type (STAB)
     /// multiplier is super effective while the other's is under 1.5x, or a

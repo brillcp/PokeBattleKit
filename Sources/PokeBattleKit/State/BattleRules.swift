@@ -1,9 +1,11 @@
-/// The tunable rules of a battle, passed to ``Combatant/init(pokemon:moves:rules:hpBonus:)``.
+/// The tunable rules of a battle, passed to ``Combatant/init(pokemon:moves:rules:level:hpBonus:)``.
 ///
 /// Nothing about battle length is a fixed constant: it follows from two
 /// design choices.
-/// - ``level``: the level every combatant fights at. Stats and damage use
-///   the main-series formulas at this level.
+/// - ``level``: the player's level, and the base level both sides' HP is
+///   scaled from. The AI opponent's level varies with the difficulty
+///   (``opponentLevel(for:)``). Stats and damage use the main-series
+///   formulas at each combatant's level.
 /// - ``referenceHitsToKO``: how many hits of a *reference attack* it should
 ///   take to knock out a *reference Pokémon*. The reference is an 80-power
 ///   same-type attack between two Pokémon with a base of 80 in every stat,

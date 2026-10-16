@@ -4,7 +4,7 @@ import Foundation
 ///
 /// A pure value type with no UI or actor dependencies: it owns a
 /// ``BattleState`` and a ``TypeChart``, and the only way to change the state
-/// is ``resolveRound(playerMove:opponentMove:)``. Because it's a `Sendable`
+/// is ``resolveRound(playerMove:opponentMove:using:)``. Because it's a `Sendable`
 /// struct, copying the engine (or its ``state``) gives an independent
 /// snapshot, so a host can hand a copy to a background AI or keep one for
 /// undo without any locking.
@@ -20,16 +20,19 @@ import Foundation
 /// ```
 ///
 /// The engine is *not* deterministic: accuracy checks, crits, damage rolls,
-/// full paralysis, secondary-effect chances, sleep length and speed ties all
-/// use the system random number generator. The AI helpers in this package
-/// use the deterministic
+/// full paralysis, secondary-effect chances, sleep length and speed ties are
+/// all drawn from the generator passed to
+/// ``resolveRound(playerMove:opponentMove:using:)``, so a seeded generator
+/// replays a battle exactly; ``resolveRound(playerMove:opponentMove:)`` uses
+/// the system random number generator. The AI helpers in this package use
+/// the deterministic
 /// ``DamageCalculator/estimateDamage(move:attacker:defender:typeChart:)``
 /// instead.
 public struct BattleEngine: Sendable {
     private let typeChart: TypeChart
 
     /// The battle after the most recent round. Read it after
-    /// ``resolveRound(playerMove:opponentMove:)`` to refresh HP bars and
+    /// ``resolveRound(playerMove:opponentMove:using:)`` to refresh HP bars and
     /// status badges; the returned events describe how it got there.
     public private(set) var state: BattleState
 
@@ -65,26 +68,29 @@ public struct BattleEngine: Sendable {
     /// The moves don't need to belong to the combatants; the engine uses
     /// whatever it's given. PP is not tracked.
     ///
+    /// - Parameter generator: The source of every random roll in the round.
+    ///   Pass a seeded generator to make battles reproducible.
     /// - Returns: The round's events in playback order, or an empty array if
     ///   the battle has already ended.
     public mutating func resolveRound(
         playerMove: some MoveData,
-        opponentMove: some MoveData
+        opponentMove: some MoveData,
+        using generator: inout some RandomNumberGenerator
     ) -> [Event] {
         guard case .selectingMove = state.phase else { return [] }
         var events: [Event] = []
         state.phase = .resolving
 
-        let order = orderedSides(playerMove: playerMove, opponentMove: opponentMove)
+        let order = orderedSides(playerMove: playerMove, opponentMove: opponentMove, using: &generator)
         var round = Round()
 
         for side in order {
             if combatant(side).isFainted || combatant(side.opposite).isFainted { continue }
             switch side {
             case .player:
-                performAction(side: .player, move: playerMove, events: &events, round: &round)
+                performAction(side: .player, move: playerMove, events: &events, round: &round, using: &generator)
             case .opponent:
-                performAction(side: .opponent, move: opponentMove, events: &events, round: &round)
+                performAction(side: .opponent, move: opponentMove, events: &events, round: &round, using: &generator)
             }
             round.acted.insert(side)
 
@@ -108,6 +114,16 @@ public struct BattleEngine: Sendable {
         state.phase = .selectingMove
         return events
     }
+
+    /// ``resolveRound(playerMove:opponentMove:using:)`` with the system
+    /// random number generator.
+    public mutating func resolveRound(
+        playerMove: some MoveData,
+        opponentMove: some MoveData
+    ) -> [Event] {
+        var generator = SystemRandomNumberGenerator()
+        return resolveRound(playerMove: playerMove, opponentMove: opponentMove, using: &generator)
+    }
 }
 
 // MARK: - Internal
@@ -116,12 +132,16 @@ extension BattleEngine {
     /// Number of hits for a move with PokeAPI's `min_hits`/`max_hits`: 1
     /// for single-hit moves, the fixed count when they're equal, the
     /// 35/35/15/15% distribution for 2-5 hit moves, and uniform otherwise.
-    static func rollHits(min minHits: Int?, max maxHits: Int?) -> Int {
+    static func rollHits(
+        min minHits: Int?,
+        max maxHits: Int?,
+        using generator: inout some RandomNumberGenerator
+    ) -> Int {
         guard let maxHits, maxHits > 1 else { return 1 }
         let minHits = Swift.max(1, minHits ?? maxHits)
         guard minHits < maxHits else { return maxHits }
         if minHits == 2, maxHits == 5 {
-            let roll = Double.random(in: 0..<1)
+            let roll = Double.random(in: 0..<1, using: &generator)
             switch roll {
             case ..<0.35: return 2
             case ..<0.70: return 3
@@ -129,7 +149,13 @@ extension BattleEngine {
             default: return 5
             }
         }
-        return Int.random(in: minHits...maxHits)
+        return Int.random(in: minHits...maxHits, using: &generator)
+    }
+
+    /// ``rollHits(min:max:using:)`` with the system random number generator.
+    static func rollHits(min minHits: Int?, max maxHits: Int?) -> Int {
+        var generator = SystemRandomNumberGenerator()
+        return rollHits(min: minHits, max: maxHits, using: &generator)
     }
 }
 
@@ -164,7 +190,8 @@ private extension BattleEngine {
         side: Side,
         move: some MoveData,
         events: inout [Event],
-        round: inout Round
+        round: inout Round,
+        using generator: inout some RandomNumberGenerator
     ) {
         // The move as this Pokémon uses it (species rules like Ivy Cudgel's
         // type), so everything below sees the real type and effects.
@@ -207,7 +234,7 @@ private extension BattleEngine {
 
         // Frozen: a 20% chance each turn to thaw out and act.
         if combatant(side).status == .freeze {
-            if Double.random(in: 0..<1) < 0.2 {
+            if Double.random(in: 0..<1, using: &generator) < 0.2 {
                 mutate(side) { $0.status = .none }
                 events.append(.thawed(side))
             } else {
@@ -216,7 +243,7 @@ private extension BattleEngine {
             }
         }
 
-        if combatant(side).status == .paralysis, Double.random(in: 0..<1) < 0.25 {
+        if combatant(side).status == .paralysis, Double.random(in: 0..<1, using: &generator) < 0.25 {
             events.append(.fullyParalyzed(side))
             return
         }
@@ -257,7 +284,7 @@ private extension BattleEngine {
         // PokeAPI reports `nil` accuracy for moves that never miss. Accuracy
         // and evasion stat stages are not applied.
         let accuracy = Double(move.accuracy ?? 100) / 100.0
-        guard Double.random(in: 0..<1) < accuracy else {
+        guard Double.random(in: 0..<1, using: &generator) < accuracy else {
             events.append(.missed(side))
             return
         }
@@ -287,7 +314,7 @@ private extension BattleEngine {
         if move.isDamage, move.damageClassKind != .status,
            let movePower = DamageCalculator.power(
                of: move, attacker: combatant(side), defender: combatant(side.opposite),
-               context: context, randomized: true
+               context: context, using: &generator
            ) {
             let effectiveness: Double
             var anyCrit = false
@@ -307,7 +334,7 @@ private extension BattleEngine {
                 // early if the target faints. Each hit rolls its own crit
                 // and damage, and escalating moves (Triple Axel) gain power
                 // each hit.
-                let hits = Self.rollHits(min: move.minHits, max: move.maxHits)
+                let hits = Self.rollHits(min: move.minHits, max: move.maxHits, using: &generator)
                 let escalates = MoveClassification.escalatingMultiHitMoves.contains(move.name)
                 var lastEffectiveness = 1.0
                 for hit in 1...hits where !combatant(side.opposite).isFainted {
@@ -316,7 +343,8 @@ private extension BattleEngine {
                         move: move,
                         attacker: combatant(side),
                         defender: combatant(side.opposite),
-                        typeChart: typeChart
+                        typeChart: typeChart,
+                        using: &generator
                     )
                     damageDealt += result.damage
                     lastEffectiveness = result.effectiveness
@@ -372,7 +400,7 @@ private extension BattleEngine {
 
         // A flinch only matters if the target hasn't acted yet this round.
         if move.flinchChance > 0, damageDealt > 0, !round.acted.contains(side.opposite),
-           Double.random(in: 0..<1) < Double(move.flinchChance) / 100.0 {
+           Double.random(in: 0..<1, using: &generator) < Double(move.flinchChance) / 100.0 {
             round.flinched.insert(side.opposite)
         }
 
@@ -394,10 +422,10 @@ private extension BattleEngine {
                 || (MoveClassification.respectsTypeImmunity.contains(move.name)
                     && typeChart.multiplier(attacking: move.typeName, defenders: targetTypes) == 0)
             if !blockedByMoveType, !ailment.isImmune(typeNames: targetTypes),
-               combatant(target).status == .none, Double.random(in: 0..<1) < chance {
+               combatant(target).status == .none, Double.random(in: 0..<1, using: &generator) < chance {
                 mutate(target) {
                     $0.status = ailment
-                    if ailment == .sleep { $0.sleepTurns = Int.random(in: 1...3) }
+                    if ailment == .sleep { $0.sleepTurns = Int.random(in: 1...3, using: &generator) }
                     $0.toxicCounter = move.inflictsBadPoison ? 1 : 0
                 }
                 events.append(.statusApplied(target, ailment))
@@ -415,7 +443,7 @@ private extension BattleEngine {
             return Double(chance) / 100.0
         }()
         let triggersStatChange = !moveHadNoEffect
-            && (move.hasSelfDebuff || Double.random(in: 0..<1) < secondaryGate)
+            && (move.hasSelfDebuff || Double.random(in: 0..<1, using: &generator) < secondaryGate)
         if triggersStatChange {
             for change in move.statChanges {
                 let target: Side = change.target == .user ? side : side.opposite
@@ -459,7 +487,11 @@ private extension BattleEngine {
 
     /// Turn order: priority bracket first, then effective speed, then a coin
     /// flip on an exact tie.
-    func orderedSides(playerMove: some MoveData, opponentMove: some MoveData) -> [Side] {
+    func orderedSides(
+        playerMove: some MoveData,
+        opponentMove: some MoveData,
+        using generator: inout some RandomNumberGenerator
+    ) -> [Side] {
         let playerKey = (playerMove.priority, state.player.effectiveSpeed)
         let opponentKey = (opponentMove.priority, state.opponent.effectiveSpeed)
         if playerKey.0 != opponentKey.0 {
@@ -468,7 +500,7 @@ private extension BattleEngine {
         if playerKey.1 != opponentKey.1 {
             return playerKey.1 > opponentKey.1 ? [.player, .opponent] : [.opponent, .player]
         }
-        return Bool.random() ? [.player, .opponent] : [.opponent, .player]
+        return Bool.random(using: &generator) ? [.player, .opponent] : [.opponent, .player]
     }
 
     func combatant(_ side: Side) -> Combatant {

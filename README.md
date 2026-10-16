@@ -6,8 +6,8 @@ Used in [PokedexUI](https://github.com/brillcp/pokedexui). Written by [Viktor Gi
 ## Features
 
 - **Type chart**: full Gen I-VIII effectiveness matchups via `TypeChart` (conforms to `TypeEffectivenessProviding`)
-- **Level-50 stats**: every combatant uses the main-series stat formulas at level 50 with perfect IVs, no EVs and a neutral nature (HP = base + 75, other stats = base + 20)
-- **Battle bulk**: max HP is 4x the level-50 HP (`Combatant.defaultBulk`) while each hit stays real-game size, so a one-on-one fight without switching lasts around six turns instead of one or two. Healing, Rest, and burn and poison damage use the real level-50 HP (`baseMaxHP`), so they keep their real-game size relative to attacks. Pass `bulk: 1` for real-game HP
+- **Main-series stats**: combatants use the main-series stat formulas with perfect IVs, no EVs and a neutral nature, at `BattleRules.level` (50 by default). The AI opponent's level varies with the `Difficulty` (see [AI strategies](#ai-strategies))
+- **Battle bulk**: max HP is scaled so a reference attack takes `BattleRules.referenceHitsToKO` hits (12 by default, about 4x real-game HP) while each hit stays real-game size, so a one-on-one fight without switching lasts several turns instead of one or two. Healing, Rest, and burn and poison damage use the real HP (`baseMaxHP`), so they keep their real-game size relative to attacks. Use `BattleRules.realGameHP` for real-game HP
 - **Damage calculator**: Gen-V+ formula with STAB, uncapped type effectiveness (4x weaknesses hit 4x), 1-in-24 crits that ignore unfavourable stat stages, high-crit moves, burn penalty, stat stages, and multi-hit moves (`DamageCalculator`)
 - **Battle engine**: turn-based 1v1 combat with move priority and stage-adjusted speed, stat stages, flinching, status effects (paralysis, burn, poison, Toxic's escalating poison, sleep for 1-3 turns) with type immunities (Electric can't be paralyzed, Fire can't be burned, Poison/Steel can't be poisoned, Thunder Wave fails on Ground), 2-5 hit moves, Fake Out on the first turn only, recharge, and faint detection (`BattleEngine`)
 - **Move classification**: recharge, self-debuff, charging, self-KO, first-turn-only and unsupported move sets (`MoveClassification`). `MoveData.isBattleReady` drops moves the engine can't model faithfully (confusion-only, accuracy/evasion, Leech Seed, trapping, Belly Drum, ...)
@@ -19,7 +19,7 @@ Used in [PokedexUI](https://github.com/brillcp/pokedexui). Written by [Viktor Gi
 - **AI strategies**: scoring, heuristic picking, and post-pick corrections for three decisions, all with a `Difficulty` (`.easy`, `.fair` (default), `.hard`):
   - `MoveScoring` + `MoveStrategy`: in-battle move selection that values every move in HP of damage, including boosts, statuses and heals, and is aware of KO and speed threats
   - `LoadoutStrategy`: role-based 4-move loadouts (two attack types, then status/boost/heal or coverage), shortlisting, filling, and an easy-mode handicap
-  - `OpponentStrategy` + `Candidate`: fair opponents by simulated strength (`PokemonStrength`) and type matchup, and a weighted random pick favouring tense matchups
+  - `MatchmakingStrategy` + `Candidate`: fair matchups by simulated strength (`PokemonStrength`) and type matchup, and a weighted random pick favouring tense matchups. Fairness is symmetric, so it picks an opponent for a player or a player for an opponent
 - **Strength ratings** (`PokemonStrength`): an Elo-style rating for every Pokémon from simulated battles under these rules (shipped as `strength-ratings.json`), with a BST-based estimate for anything unrated
 - **Battle simulator** (`BattleSimulator`): headless AI-vs-AI battles, used by the tests and the rating generator
 - **PokeAPI networking + disk cache**: fetches and caches all moves (~937) and type data on first launch, reads from disk on subsequent launches
@@ -79,7 +79,7 @@ The AI layer is rule-based. Scoring is deterministic; picking depends on the `Di
 
 The level gaps (`Difficulty.opponentLevelOffset`, applied with `BattleRules.opponentLevel(for:)`) are calibrated with the balance simulation so a good player wins about 90% / 50% / 20% of battles (`Difficulty.targetPlayerWinRate`); a test keeps them there.
 
-`MoveStrategy.heuristicPick` and `OpponentStrategy.pick` take a `using:` random number generator for reproducible tests.
+Everything that rolls takes a `using:` random number generator: the engine (`BattleEngine.resolveRound`, `DamageCalculator.computeDamage`), the AI (`MoveStrategy.heuristicPick`, `LoadoutStrategy.adjust`, `MatchmakingStrategy.pick`) and `BattleSimulator.battle`, so a seeded simulation replays exactly. Overloads without it use the system generator.
 
 ```swift
 let chart = PokeBattleKit.typeChart
@@ -105,10 +105,10 @@ let loadout = LoadoutStrategy.heuristicPick(
 )
 
 // Pick a fair opponent (by simulated strength), skipping recent ones
-let opponent = OpponentStrategy.pick(
+let opponent = MatchmakingStrategy.pick(
     for: playerCandidate, from: candidates, typeChart: chart, excluding: recentIDs
 )
-let chance = OpponentStrategy.predictedWinChance(of: playerCandidate, against: opponent!)
+let chance = MatchmakingStrategy.predictedWinChance(of: playerCandidate, against: opponent!)
 
 // Run a whole AI-vs-AI battle headlessly
 var rng = SystemRandomNumberGenerator()
@@ -146,7 +146,7 @@ PokeBattleKit builds in the **Swift 6 language mode**, so data-race safety is ch
 | `PokeAPIClient` (internal) | Stateless `Sendable` struct | ~950 move requests download and decode in parallel task-group children |
 | `DiskCache` (internal) | `Sendable` struct | Atomic JSON writes in the Caches directory |
 
-The AI strategies (`MoveScoring`, `MoveStrategy`, `LoadoutStrategy`, `OpponentStrategy`) are pure static functions over `Sendable` inputs, so they can run on any actor, including off the main thread for heavy pool scoring.
+The AI strategies (`MoveScoring`, `MoveStrategy`, `LoadoutStrategy`, `MatchmakingStrategy`) are pure static functions over `Sendable` inputs, so they can run on any actor, including off the main thread for heavy pool scoring.
 
 ## Testing
 
@@ -156,10 +156,16 @@ The test suite uses **Swift Testing** (`import Testing`), with descriptive `@Tes
 swift test
 ```
 
+The whole-Pokédex and balance simulations play thousands of seeded battles, so they only run with `SIMULATE=1` (in release; a few minutes):
+
+```sh
+SIMULATE=1 swift test -c release -Xswiftc -enable-testing --filter "PokedexSimulationTests|BalanceSimulationTests"
+```
+
 The suite runs against an offline snapshot of all of PokeAPI (`Tests/PokeBattleKitTests/Resources/pokeapi-snapshot.json`; refresh with `python3 Scripts/fetch_pokeapi_snapshot.py`), so battle quality is checked for every move and every Pokémon, not just the battles someone plays:
 
 - `MoveCatalogAuditTests` decodes every move through the package's own PokeAPI decoding and fails if any value the engine reads is unknown, or if a learnable move with an unusual mechanic isn't explicitly modeled, approximated (`MoveClassification.approximations`) or excluded. It prints a catalogue report.
-- `PokedexSimulationTests` runs AI-vs-AI battles across the whole Pokédex, with opponents picked by `OpponentStrategy.pick` as an app would, and checks every battle: no unusable move picked, a real attack in every loadout, no sure KO passed up on hard, several turns per battle, no stalls, each difficulty's target win rate, and that the strength ratings still predict outcomes.
+- `PokedexSimulationTests` runs AI-vs-AI battles across the whole Pokédex, with opponents picked by `MatchmakingStrategy.pick` as an app would, and checks every battle: no unusable move picked, a real attack in every loadout, no sure KO passed up on hard, several turns per battle, no stalls, each difficulty's target win rate, and that the strength ratings still predict outcomes.
 
 After changing the rules or the AI, regenerate the ratings, then recalibrate the difficulty level gaps (both run in release; a few minutes each):
 
@@ -180,7 +186,7 @@ Separately, a Swift 6 concurrency pass replaced the `nonisolated(unsafe)` global
 ```
 PokeBattleKit/
   PokeBattleKit.swift     Entry point, initialize(), move lookup (Mutex-guarded catalogue)
-  AI/                     Difficulty, MoveScoring, MoveStrategy, LoadoutStrategy, OpponentStrategy, PokemonStrength
+  AI/                     Difficulty, MoveScoring, MoveStrategy, LoadoutStrategy, MatchmakingStrategy, PokemonStrength
   Simulation/             BattleSimulator
   Resources/              strength-ratings.json
   Engine/                 BattleEngine, DamageCalculator, StatStage

@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import PokeBattleKit
 
@@ -7,7 +8,14 @@ import Testing
 /// heuristic AI, so the numbers measure the engine and the AI rather than a
 /// human. The printed report is the tool for tuning balance; the
 /// expectations only guard the properties the engine promises.
-@Suite("Balance simulation", .serialized)
+///
+/// Every run is seeded, so its numbers are the same on every machine. The
+/// suite plays thousands of battles, so it only runs with `SIMULATE=1`:
+/// `SIMULATE=1 swift test -c release -Xswiftc -enable-testing --filter BalanceSimulationTests`
+@Suite(
+    "Balance simulation", .serialized,
+    .enabled(if: ProcessInfo.processInfo.environment["SIMULATE"] != nil)
+)
 struct BalanceSimulationTests {
 
     /// Aggregate results over a batch of battles.
@@ -67,14 +75,16 @@ struct BalanceSimulationTests {
 
     static let maxTurns = 50
 
-    /// Runs `repeats` battles for every ordered pair of fixture species.
-    static func simulate(_ setup: Setup, repeats: Int) -> Report {
+    /// Runs `repeats` battles for every ordered pair of fixture species,
+    /// with every random choice drawn from a generator seeded with `seed`.
+    static func simulate(_ setup: Setup, repeats: Int, seed: UInt64) -> Report {
+        var generator = SeededGenerator(state: seed)
         var report = Report()
         let roster = Fixtures.roster
         for player in roster {
             for opponent in roster where opponent.pokemon.id != player.pokemon.id {
                 for _ in 0..<repeats {
-                    let outcome = battle(player: player, opponent: opponent, setup: setup, report: &report)
+                    let outcome = battle(player: player, opponent: opponent, setup: setup, report: &report, using: &generator)
                     record(outcome, player: player, opponent: opponent, into: &report)
                 }
             }
@@ -91,7 +101,8 @@ struct BalanceSimulationTests {
         player: Fixtures.Species,
         opponent: Fixtures.Species,
         setup: Setup,
-        report: inout Report
+        report: inout Report,
+        using generator: inout some RandomNumberGenerator
     ) -> Outcome {
         let chart = Fixtures.typeChart
         let playerPool = Fixtures.battleReadyMoves(for: player)
@@ -112,7 +123,7 @@ struct BalanceSimulationTests {
                 fighter: opponentProbe, opponent: playerProbe, moves: opponentPool, typeChart: chart
             ),
             pool: opponentPool, fighter: opponentProbe, opponent: playerProbe, typeChart: chart,
-            difficulty: setup.difficulty
+            difficulty: setup.difficulty, using: &generator
         )
 
         var engine = BattleEngine(
@@ -126,15 +137,15 @@ struct BalanceSimulationTests {
         var history: [Side: [String]] = [.player: [], .opponent: []]
         for turn in 1...maxTurns {
             // The player side stands in for a competent human: always fair.
-            let playerMove = pick(for: .player, engine: engine, history: history[.player, default: []], difficulty: .fair)
-            let opponentMove = pick(for: .opponent, engine: engine, history: history[.opponent, default: []], difficulty: setup.difficulty)
+            let playerMove = pick(for: .player, engine: engine, history: history[.player, default: []], difficulty: .fair, using: &generator)
+            let opponentMove = pick(for: .opponent, engine: engine, history: history[.opponent, default: []], difficulty: setup.difficulty, using: &generator)
             for move in [playerMove, opponentMove] {
                 report.picksByCategory[move.loadoutCategory, default: 0] += 1
             }
             history[.player, default: []].append(playerMove.name)
             history[.opponent, default: []].append(opponentMove.name)
 
-            let events = engine.resolveRound(playerMove: playerMove, opponentMove: opponentMove)
+            let events = engine.resolveRound(playerMove: playerMove, opponentMove: opponentMove, using: &generator)
             for event in events {
                 if case .ended(let winner) = event { return Outcome(winner: winner, turns: turn) }
             }
@@ -144,7 +155,13 @@ struct BalanceSimulationTests {
 
     /// The AI's move for `side`, the same way the app's fallback path picks
     /// one: the heuristic pick, then the correction pipeline.
-    static func pick(for side: Side, engine: BattleEngine, history: [String], difficulty: Difficulty) -> MoveSnapshot {
+    static func pick(
+        for side: Side,
+        engine: BattleEngine,
+        history: [String],
+        difficulty: Difficulty,
+        using generator: inout some RandomNumberGenerator
+    ) -> MoveSnapshot {
         let chart = Fixtures.typeChart
         let attacker = side == .player ? engine.state.player : engine.state.opponent
         let defender = side == .player ? engine.state.opponent : engine.state.player
@@ -152,7 +169,7 @@ struct BalanceSimulationTests {
         let struggle = Fixtures.moves["tackle"]!
         guard let pick = MoveStrategy.heuristicPick(
             attacker: attacker, defender: defender, moves: moves, typeChart: chart,
-            recentMoves: Array(history.suffix(4)), difficulty: difficulty
+            recentMoves: Array(history.suffix(4)), difficulty: difficulty, using: &generator
         ) else { return struggle }
         let fallback = DamageCalculator.strongestMove(
             attacker: attacker, defender: defender, moves: moves, typeChart: chart
@@ -187,9 +204,9 @@ struct BalanceSimulationTests {
 
     // MARK: - Tests
 
-    @Test("Fair AI-vs-AI battles are balanced", arguments: [Difficulty.fair])
+    @Test("Fair AI-vs-AI battles are balanced", .timeLimit(.minutes(5)), arguments: [Difficulty.fair])
     func fairBattlesAreBalanced(difficulty: Difficulty) {
-        let report = Self.simulate(Setup(difficulty: difficulty), repeats: 6)
+        let report = Self.simulate(Setup(difficulty: difficulty), repeats: 6, seed: 11)
         print("Balance report (\(difficulty)):\n\(report)")
 
         // Both sides use the same AI and nobody gets a handicap, so neither
@@ -209,10 +226,11 @@ struct BalanceSimulationTests {
         #expect(report.share("DMG") > 0.70)
     }
 
-    @Test("Easy favours the player and hard the AI")
+    @Test("Easy favours the player and hard the AI", .timeLimit(.minutes(5)))
     func difficultyOrdering() {
-        let easy = Self.simulate(Setup(difficulty: .easy), repeats: 2)
-        let hard = Self.simulate(Setup(difficulty: .hard), repeats: 2)
+        let easy = Self.simulate(Setup(difficulty: .easy), repeats: 2, seed: 13)
+        let hard = Self.simulate(Setup(difficulty: .hard), repeats: 2, seed: 17)
+        print("Difficulty ordering: easy player wins \(Int((easy.playerWinRate * 100).rounded()))%, hard \(Int((hard.playerWinRate * 100).rounded()))%")
         #expect(easy.playerWinRate > 0.5)
         #expect(hard.playerWinRate < 0.5)
     }

@@ -70,5 +70,4 @@ private extension PokeAPIClient {
 /// Errors from PokeAPI requests.
 public enum PokeAPIError: Error, Sendable {
     case badResponse
-    case notInitialized
 }

@@ -27,14 +27,15 @@ public enum BattleSimulator {
     }
 
     /// A move choice, reported to the `onPick` observer.
-    public struct Pick {
+    public struct Pick: Sendable {
         public let side: Side
         public let attacker: Combatant
         public let defender: Combatant
         public let move: MoveSnapshot
     }
 
-    public struct Result {
+    /// The outcome of one simulated battle.
+    public struct Result: Sendable {
         /// `nil` if the battle hit the turn limit.
         public let winner: Side?
         public let turns: Int
@@ -43,9 +44,13 @@ public enum BattleSimulator {
         public let finalState: BattleState
     }
 
-    /// Plays one battle. The opponent's loadout gets its difficulty's
-    /// handicap (``LoadoutStrategy/adjust(picks:pool:fighter:opponent:typeChart:difficulty:)``);
+    /// Plays one battle. Each side's loadout gets its difficulty's
+    /// handicap (``LoadoutStrategy/adjust(picks:pool:fighter:opponent:typeChart:difficulty:using:)``);
     /// `onPick` sees every move choice, for checking invariants.
+    ///
+    /// Every random choice (loadout handicaps, move picks and the engine's
+    /// rolls) comes from `generator`, so a seeded generator replays the
+    /// same battle exactly.
     public static func battle<P: PokemonData, O: PokemonData>(
         player: Fighter<P>,
         opponent: Fighter<O>,
@@ -60,12 +65,12 @@ public enum BattleSimulator {
         let playerMoves = LoadoutStrategy.adjust(
             picks: LoadoutStrategy.heuristicPick(fighter: playerProbe, opponent: opponentProbe, moves: player.movepool, typeChart: typeChart),
             pool: player.movepool, fighter: playerProbe, opponent: opponentProbe, typeChart: typeChart,
-            difficulty: player.difficulty
+            difficulty: player.difficulty, using: &generator
         )
         let opponentMoves = LoadoutStrategy.adjust(
             picks: LoadoutStrategy.heuristicPick(fighter: opponentProbe, opponent: playerProbe, moves: opponent.movepool, typeChart: typeChart),
             pool: opponent.movepool, fighter: opponentProbe, opponent: playerProbe, typeChart: typeChart,
-            difficulty: opponent.difficulty
+            difficulty: opponent.difficulty, using: &generator
         )
         var engine = BattleEngine(
             state: BattleState(
@@ -80,7 +85,7 @@ public enum BattleSimulator {
             let opponentMove = pick(.opponent, engine: engine, history: history[.opponent] ?? [], difficulty: opponent.difficulty, typeChart: typeChart, using: &generator, onPick: onPick)
             history[.player, default: []].append(playerMove.name)
             history[.opponent, default: []].append(opponentMove.name)
-            for event in engine.resolveRound(playerMove: playerMove, opponentMove: opponentMove) {
+            for event in engine.resolveRound(playerMove: playerMove, opponentMove: opponentMove, using: &generator) {
                 if case .ended(let winner) = event {
                     return Result(winner: winner, turns: turn, playerLoadout: playerMoves, opponentLoadout: opponentMoves, finalState: engine.state)
                 }

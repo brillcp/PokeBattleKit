@@ -68,14 +68,44 @@ public extension DamageCalculator {
     ///   HP bulk), so with extra bulk they're still worth about one hit,
     ///   not several. Endeavor cuts the target's HP to the user's.
     ///
-    /// - Parameter randomized: Roll Magnitude and Psywave (the engine);
-    ///   otherwise use their averages (planning).
+    /// - Parameter randomized: Roll Magnitude and Psywave with the system
+    ///   random number generator (the engine); otherwise use their averages
+    ///   (planning). To roll with a specific generator, use
+    ///   ``power(of:attacker:defender:context:using:)``.
     static func power(
         of move: some MoveData,
         attacker: Combatant,
         defender: Combatant,
         context: TurnContext,
         randomized: Bool = false
+    ) -> MovePower? {
+        var generator = SystemRandomNumberGenerator()
+        return power(of: move, attacker: attacker, defender: defender, context: context, randomized: randomized, generator: &generator)
+    }
+
+    /// ``power(of:attacker:defender:context:randomized:)`` with Magnitude
+    /// and Psywave rolled from `generator`, as the engine resolves them.
+    static func power(
+        of move: some MoveData,
+        attacker: Combatant,
+        defender: Combatant,
+        context: TurnContext,
+        using generator: inout some RandomNumberGenerator
+    ) -> MovePower? {
+        power(of: move, attacker: attacker, defender: defender, context: context, randomized: true, generator: &generator)
+    }
+}
+
+private extension DamageCalculator {
+    /// Shared core of the `power(of:...)` overloads; `generator` is only
+    /// used when `randomized` is set.
+    static func power(
+        of move: some MoveData,
+        attacker: Combatant,
+        defender: Combatant,
+        context: TurnContext,
+        randomized: Bool,
+        generator: inout some RandomNumberGenerator
     ) -> MovePower? {
         let base = move.power ?? 0
         let bulk = Double(defender.maxHP) / Double(max(1, defender.baseMaxHP))
@@ -106,7 +136,7 @@ public extension DamageCalculator {
         case "punishment":
             return .power(min(200, 60 + 20 * defender.statStages.values.filter { $0 > 0 }.reduce(0, +)))
         case "magnitude":
-            return .power(randomized ? magnitudeRoll() : 71)
+            return .power(randomized ? magnitudeRoll(using: &generator) : 71)
         case "facade":
             return doubled(if: attacker.status != .none && attacker.status != .sleep && attacker.status != .freeze)
         case "hex":
@@ -128,7 +158,7 @@ public extension DamageCalculator {
         case "seismic-toss", "night-shade":
             return fixed(Double(attacker.level))
         case "psywave":
-            return fixed(Double(attacker.level) * (randomized ? Double.random(in: 0.5...1.5) : 1))
+            return fixed(Double(attacker.level) * (randomized ? Double.random(in: 0.5...1.5, using: &generator) : 1))
         case "dragon-rage":
             return fixed(40)
         case "sonic-boom":
@@ -141,9 +171,7 @@ public extension DamageCalculator {
             return base > 0 ? .power(base) : nil
         }
     }
-}
 
-private extension DamageCalculator {
     /// Low Kick / Grass Knot power by the target's weight in kilograms.
     static func weightPower(_ hectograms: Int?) -> Int {
         guard let hectograms else { return 60 }
@@ -167,8 +195,8 @@ private extension DamageCalculator {
 
     /// Magnitude 4-10: 10, 30, 50, 70, 90, 110, 150 power with
     /// 5/10/20/30/20/10/5% odds.
-    static func magnitudeRoll() -> Int {
-        let roll = Double.random(in: 0..<1)
+    static func magnitudeRoll(using generator: inout some RandomNumberGenerator) -> Int {
+        let roll = Double.random(in: 0..<1, using: &generator)
         let table: [(Double, Int)] = [(0.05, 10), (0.15, 30), (0.35, 50), (0.65, 70), (0.85, 90), (0.95, 110), (1.0, 150)]
         return table.first { roll < $0.0 }?.1 ?? 150
     }

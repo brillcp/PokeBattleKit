@@ -167,3 +167,63 @@ struct EngineTests {
         #expect(isSelectingMove, "Phase should reset to selectingMove after non-fatal round")
     }
 }
+
+extension EngineTests {
+    /// Everything observable about one seeded simulated battle.
+    struct Replay: Equatable {
+        var winner: Side?
+        var turns: Int
+        var loadouts: [[String]]
+        var picks: [String]
+        var finalHP: [Int]
+        var events: [String]
+    }
+
+    static func replay(_ player: Fixtures.Species, _ opponent: Fixtures.Species, seed: UInt64) -> Replay {
+        var generator = SeededGenerator(state: seed)
+        var picks: [String] = []
+        // Easy on the opponent, so the loadout handicap's draw is covered too.
+        let result = BattleSimulator.battle(
+            player: .init(pokemon: player.pokemon, movepool: Fixtures.battleReadyMoves(for: player)),
+            opponent: .init(pokemon: opponent.pokemon, movepool: Fixtures.battleReadyMoves(for: opponent), difficulty: .easy),
+            typeChart: Fixtures.typeChart, using: &generator,
+            onPick: { picks.append("\($0.side) \($0.move.name) \($0.attacker.currentHP)/\($0.defender.currentHP)") }
+        )
+        // The engine on its own, replaying the simulator's loadouts.
+        var engine = BattleEngine(
+            state: BattleState(
+                player: Combatant(pokemon: player.pokemon, moves: result.playerLoadout),
+                opponent: Combatant(pokemon: opponent.pokemon, moves: result.opponentLoadout)
+            ),
+            typeChart: Fixtures.typeChart
+        )
+        var events: [String] = []
+        for _ in 0..<20 {
+            events += engine.resolveRound(
+                playerMove: result.playerLoadout[0], opponentMove: result.opponentLoadout[0], using: &generator
+            ).map { String(describing: $0) }
+        }
+        return Replay(
+            winner: result.winner, turns: result.turns,
+            loadouts: [result.playerLoadout.map(\.name), result.opponentLoadout.map(\.name)],
+            picks: picks,
+            finalHP: [result.finalState.player.currentHP, result.finalState.opponent.currentHP],
+            events: events
+        )
+    }
+
+    @Test("A seeded simulation replays exactly")
+    func seededSimulationIsReproducible() {
+        let pairs = zip(Fixtures.roster, Fixtures.roster.dropFirst()).prefix(6)
+        var differsWithAnotherSeed = false
+        for (player, opponent) in pairs {
+            let first = Self.replay(player, opponent, seed: 99)
+            let second = Self.replay(player, opponent, seed: 99)
+            #expect(first == second, "\(player.pokemon.name) vs \(opponent.pokemon.name)")
+            #expect(!first.picks.isEmpty && !first.events.isEmpty)
+            if Self.replay(player, opponent, seed: 100) != first { differsWithAnotherSeed = true }
+        }
+        // The seed actually drives the randomness.
+        #expect(differsWithAnotherSeed)
+    }
+}

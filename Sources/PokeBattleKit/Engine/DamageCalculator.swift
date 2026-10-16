@@ -6,7 +6,8 @@ import Foundation
 /// There are two entry points with deliberately different guarantees:
 ///
 /// - `computeDamage` is what ``BattleEngine`` calls to resolve one hit. It
-///   rolls a critical hit and the 85–100% damage spread, so it's random.
+///   rolls a critical hit and the 85–100% damage spread from the generator
+///   it's given, so it's random (and reproducible with a seeded generator).
 /// - ``estimateDamage(move:attacker:defender:typeChart:)`` uses the same
 ///   formula without crit or random roll, so it's deterministic. For a
 ///   single-hit move it equals the *highest* non-critical roll the engine
@@ -70,6 +71,8 @@ public enum DamageCalculator {
     /// - Parameters:
     ///   - forceCritical: Overrides the crit roll, for tests.
     ///   - roll: Overrides the random factor, for tests.
+    ///   - generator: The source of the crit and damage rolls that aren't
+    ///     overridden.
     /// - Returns: The damage (0 against an immune target, otherwise at least
     ///   1), the type multiplier, and whether the hit was critical.
     static func computeDamage(
@@ -79,18 +82,37 @@ public enum DamageCalculator {
         defender: Combatant,
         typeChart: some TypeEffectivenessProviding,
         forceCritical: Bool? = nil,
-        roll: Double? = nil
+        roll: Double? = nil,
+        using generator: inout some RandomNumberGenerator
     ) -> (damage: Int, effectiveness: Double, crit: Bool) {
         let typeMult = typeChart.multiplier(attacking: move.typeName, defenders: defender.typeNames)
-        let crit = forceCritical ?? (Double.random(in: 0..<1) < criticalChance(stage: move.critRate))
+        let crit = forceCritical ?? (Double.random(in: 0..<1, using: &generator) < criticalChance(stage: move.critRate))
         guard typeMult > 0 else { return (0, 0, crit) }
 
         let base = baseDamage(power: power, move: move, attacker: attacker, defender: defender, critical: crit)
         let critMult = crit ? criticalMultiplier : 1.0
-        let randVar = roll ?? Double.random(in: 0.85...1.0)
+        let randVar = roll ?? Double.random(in: 0.85...1.0, using: &generator)
         let total = base * stab(move: move, attacker: attacker) * typeMult * critMult * randVar
             * burnPenalty(move: move, attacker: attacker)
         return (max(1, Int(total)), typeMult, crit)
+    }
+
+    /// ``computeDamage(power:move:attacker:defender:typeChart:forceCritical:roll:using:)``
+    /// with the system random number generator.
+    static func computeDamage(
+        power: Int,
+        move: some MoveData,
+        attacker: Combatant,
+        defender: Combatant,
+        typeChart: some TypeEffectivenessProviding,
+        forceCritical: Bool? = nil,
+        roll: Double? = nil
+    ) -> (damage: Int, effectiveness: Double, crit: Bool) {
+        var generator = SystemRandomNumberGenerator()
+        return computeDamage(
+            power: power, move: move, attacker: attacker, defender: defender, typeChart: typeChart,
+            forceCritical: forceCritical, roll: roll, using: &generator
+        )
     }
 
     /// Deterministic damage estimate (no randomness, no crit) for AI scoring.

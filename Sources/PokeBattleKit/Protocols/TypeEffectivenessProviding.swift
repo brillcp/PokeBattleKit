@@ -15,7 +15,7 @@ public extension TypeEffectivenessProviding {
     /// Highest multiplier any of `attackerTypes` achieves against `defenderTypes`.
     ///
     /// Approximates how hard a Pokemon can hit with same-type (STAB) moves
-    /// without knowing its actual moveset. ``OpponentStrategy`` uses it in
+    /// without knowing its actual moveset. ``MatchmakingStrategy`` uses it in
     /// both directions to judge offensive pressure on a type matchup.
     /// Returns 1.0 when `attackerTypes` is empty (and, for ``TypeChart``,
     /// when `defenderTypes` is empty).

@@ -3,7 +3,7 @@ import Testing
 @testable import PokeBattleKit
 
 /// AI-vs-AI battles across the whole Pokédex, with matchups picked the way
-/// the app picks them (`OpponentStrategy.pick`), checked for the properties
+/// the app picks them (`MatchmakingStrategy.pick`), checked for the properties
 /// every battle should have. Also generates the strength ratings in
 /// `PokemonStrength`.
 ///
@@ -12,6 +12,11 @@ import Testing
 /// difficulty under test, at its difficulty level. Besides aggregate
 /// numbers, every turn is checked: no move that can't work is ever chosen,
 /// and on hard the AI never passes up a sure KO.
+///
+/// Every simulation is seeded, so its numbers are the same on every run.
+/// The battle simulations take a while, so they only run with
+/// `SIMULATE=1`:
+/// `SIMULATE=1 swift test -c release -Xswiftc -enable-testing --filter PokedexSimulationTests`
 @Suite("Whole Pokédex simulation", .serialized)
 struct PokedexSimulationTests {
 
@@ -35,18 +40,6 @@ struct PokedexSimulationTests {
     }
     static let byID = Dictionary(uniqueKeysWithValues: roster.map { ($0.pokemon.id, $0) })
     static let chart = Fixtures.typeChart
-
-    /// Deterministic generator (SplitMix64), so sampled matchups repeat.
-    struct SeededGenerator: RandomNumberGenerator {
-        var state: UInt64
-        mutating func next() -> UInt64 {
-            state &+= 0x9E37_79B9_7F4A_7C15
-            var z = state
-            z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
-            z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
-            return z ^ (z >> 31)
-        }
-    }
 
     struct Report: CustomStringConvertible {
         var battles = 0
@@ -89,7 +82,7 @@ struct PokedexSimulationTests {
         let opponentLevel = levelOffset.map { rules.level + $0 } ?? rules.opponentLevel(for: difficulty)
         for _ in 0..<count {
             let player = roster.randomElement(using: &generator)!
-            guard let pick = OpponentStrategy.pick(for: player.candidate, from: candidates, typeChart: chart, using: &generator),
+            guard let pick = MatchmakingStrategy.pick(for: player.candidate, from: candidates, typeChart: chart, using: &generator),
                   let opponent = byID[pick.id] else { continue }
             var picksReport = report
             let result = BattleSimulator.battle(
@@ -162,7 +155,7 @@ struct PokedexSimulationTests {
         #expect(unrated.isEmpty, "Unrated (regenerate strength-ratings.json): \(unrated.prefix(20).map(\.pokemon.name))")
     }
 
-    @Test("Strength ratings predict battle outcomes")
+    @Test("Strength ratings predict battle outcomes", .enabled(if: ProcessInfo.processInfo.environment["SIMULATE"] != nil), .timeLimit(.minutes(5)))
     func ratingsPredictOutcomes() {
         // Matchups the ratings call lopsided should mostly go the
         // predicted way; this guards against stale ratings after a rule
@@ -172,7 +165,7 @@ struct PokedexSimulationTests {
         for _ in 0..<600 {
             let a = Self.roster.randomElement(using: &generator)!
             let b = Self.roster.randomElement(using: &generator)!
-            let chance = OpponentStrategy.predictedWinChance(of: a.candidate, against: b.candidate)
+            let chance = MatchmakingStrategy.predictedWinChance(of: a.candidate, against: b.candidate)
             guard abs(chance - 0.5) > 0.25 else { continue }
             let result = BattleSimulator.battle(
                 player: .init(pokemon: a.pokemon, movepool: a.moves), opponent: .init(pokemon: b.pokemon, movepool: b.moves),
@@ -186,7 +179,7 @@ struct PokedexSimulationTests {
         #expect(Double(correct) / Double(max(1, predicted)) > 0.75)
     }
 
-    @Test("Battles across the Pokédex are healthy", arguments: Difficulty.allCases)
+    @Test("Battles across the Pokédex are healthy", .enabled(if: ProcessInfo.processInfo.environment["SIMULATE"] != nil), .timeLimit(.minutes(10)), arguments: Difficulty.allCases)
     func healthyBattles(difficulty: Difficulty) {
         let report = Self.simulate(difficulty, count: 500, seed: 7)
         print("Pokédex simulation (\(difficulty), opponent \(difficulty.opponentLevelOffset) levels):\n\(report)")

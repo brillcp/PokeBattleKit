@@ -53,6 +53,8 @@ public enum PokemonStrength {
               let data = try? Data(contentsOf: url),
               let table = try? JSONDecoder().decode(Table.self, from: data)
         else {
+            // The table ships with the package, so this is a packaging bug.
+            assertionFailure("strength-ratings.json is missing from the bundle or failed to decode")
             // No table: every Pokémon is estimated from BST with a neutral fit.
             return Table(method: "none", fit: .init(intercept: 1500 - 500 * 2, slope: 2), ratings: [:])
         }

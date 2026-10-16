@@ -10,7 +10,9 @@
 /// ``MoveScoring/score(move:fighter:opponent:typeChart:)`` against the
 /// specific opponent, so loadouts are tailored to the matchup. Pass moves
 /// already filtered with ``MoveData/isBattleReady``. Everything here is
-/// deterministic except `adjust`, which picks its replacement at random.
+/// deterministic except `adjust`, which picks its replacement at random
+/// (from the generator passed to
+/// ``adjust(picks:pool:fighter:opponent:typeChart:difficulty:using:)``).
 public enum LoadoutStrategy {
 
     /// Up to `limit` moves, chosen to cover every role and returned
@@ -109,6 +111,10 @@ public enum LoadoutStrategy {
     /// Returns `picks` unchanged if it has fewer than two damaging moves
     /// (the AI keeps its main attack) or `pool` has no suitable
     /// replacement.
+    ///
+    /// Uses the system random number generator; see
+    /// ``adjust(picks:pool:fighter:opponent:typeChart:difficulty:using:)``
+    /// for reproducible handicaps.
     public static func adjust<M: MoveData>(
         picks: [M],
         pool: [M],
@@ -117,8 +123,27 @@ public enum LoadoutStrategy {
         typeChart: some TypeEffectivenessProviding,
         difficulty: Difficulty = .fair
     ) -> [M] {
+        var generator = SystemRandomNumberGenerator()
+        return adjust(
+            picks: picks, pool: pool, fighter: fighter, opponent: opponent,
+            typeChart: typeChart, difficulty: difficulty, using: &generator
+        )
+    }
+
+    /// ``adjust(picks:pool:fighter:opponent:typeChart:difficulty:)`` with an
+    /// explicit random number generator for the replacement draw, for
+    /// reproducible tests and simulations.
+    public static func adjust<M: MoveData>(
+        picks: [M],
+        pool: [M],
+        fighter: Combatant,
+        opponent: Combatant,
+        typeChart: some TypeEffectivenessProviding,
+        difficulty: Difficulty,
+        using generator: inout some RandomNumberGenerator
+    ) -> [M] {
         guard difficulty == .easy else { return picks }
-        return handicap(picks, pool: pool, fighter: fighter, opponent: opponent, typeChart: typeChart)
+        return handicap(picks, pool: pool, fighter: fighter, opponent: opponent, typeChart: typeChart, using: &generator)
     }
 }
 
@@ -221,7 +246,8 @@ private extension LoadoutStrategy {
         pool: [M],
         fighter: Combatant,
         opponent: Combatant,
-        typeChart: some TypeEffectivenessProviding
+        typeChart: some TypeEffectivenessProviding,
+        using generator: inout some RandomNumberGenerator
     ) -> [M] {
         let damageMoves = loadout.enumerated().filter { $0.element.isDamage }
         guard damageMoves.count >= 2 else { return loadout }
@@ -242,7 +268,7 @@ private extension LoadoutStrategy {
             .sorted { dmg($0) < dmg($1) }
 
         let bottomHalf = candidates.prefix(max(1, candidates.count / 2))
-        guard let replacement = bottomHalf.randomElement() else { return loadout }
+        guard let replacement = bottomHalf.randomElement(using: &generator) else { return loadout }
 
         var result = loadout
         result[strongest.offset] = replacement
